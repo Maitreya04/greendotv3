@@ -55,7 +55,7 @@ function mergeDietRule(mode: DietMode): Required<Pick<DietRule, "blocklist">> & 
   while (cursor) {
     if (seen.has(cursor)) break; // guard against cycles
     seen.add(cursor);
-    const node = (RULES as Record<string, DietRule>)[cursor];
+    const node: DietRule | undefined = (RULES as unknown as Record<string, DietRule | undefined>)[cursor];
     if (node) chain.unshift(node); // parent first
     cursor = node?.extends;
   }
