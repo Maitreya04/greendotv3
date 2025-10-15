@@ -1,6 +1,15 @@
+@import "tailwindcss";
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-bg-dark: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-border-dark: rgba(255, 255, 255, 0.1);
+  --safe: #10b981; /* emerald-500 */
+  --unsafe: #ef4444; /* red-500 */
+  --unsure: #f59e0b; /* amber-500 */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -8,6 +17,14 @@
     --background: #0a0a0a;
     --foreground: #ededed;
   }
+}
+
+/* Support class-based dark mode as configured in Tailwind */
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --glass-bg: var(--glass-bg-dark);
+  --glass-border: var(--glass-border-dark);
 }
 
 html,
@@ -19,7 +36,9 @@ body {
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
+    "Segoe UI Emoji";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -39,4 +58,41 @@ a {
   html {
     color-scheme: dark;
   }
+}
+
+/* Glassmorphism utility classes */
+.glass {
+  /* background and blur */
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  /* subtle border and shadow */
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+.glass-lg {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 0.75rem;
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.1);
+}
+
+.glass-hover {
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+
+.glass-hover:hover {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.16);
+  transform: translateY(-1px);
 }
