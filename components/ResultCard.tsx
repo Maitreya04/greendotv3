@@ -279,7 +279,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
   }, [result.ingredientsNormalized]);
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center px-4 sm:p-6 bg-black/40 backdrop-blur-sm">
       <motion.div
         ref={dialogRef}
         role="dialog"

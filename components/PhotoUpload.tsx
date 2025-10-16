@@ -222,7 +222,7 @@ export default function PhotoUpload({ open, onClose, dietMode }: Props) {
             exit={{ y: 50, opacity: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 24 }}
           >
-            <div className="relative mx-auto w-full max-w-2xl rounded-t-2xl bg-white p-4 shadow-xl sm:rounded-2xl sm:p-5">
+            <div className="relative mx-4 w-auto max-w-2xl rounded-t-2xl bg-white p-4 shadow-xl sm:mx-auto sm:w-full sm:rounded-2xl sm:p-5">
               <div className="mb-3 flex items-center justify-between">
                 <div className="text-base font-semibold text-gray-900">Upload ingredient photo</div>
                 <button

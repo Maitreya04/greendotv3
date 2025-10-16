@@ -408,7 +408,7 @@ export default function SettingsPage() {
               exit={{ y: 24, scale: 0.98, opacity: 0 }}
               transition={{ type: "spring", stiffness: 260, damping: 26 }}
               onClick={(e) => e.stopPropagation()}
-              className="absolute left-1/2 top-1/2 w-[92%] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-2xl"
+              className="absolute left-1/2 top-1/2 w-[90%] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-2xl"
             >
               <div className="flex items-center gap-2">
                 <Info className="h-5 w-5 text-stone-600" aria-hidden />
@@ -444,7 +444,7 @@ export default function SettingsPage() {
                 exit={{ y: 40, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 280, damping: 26 }}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full sm:w-auto sm:max-w-md sm:rounded-2xl bg-white p-5 shadow-2xl sm:mx-0 mx-2 rounded-t-2xl"
+                className="w-full sm:w-auto sm:max-w-md sm:rounded-2xl bg-white p-5 shadow-2xl sm:mx-0 mx-4 rounded-t-2xl"
               >
                 <div className="text-base font-semibold">Clear all data?</div>
                 <div className="mt-1 text-sm text-stone-600">This resets preferences and removes local history.</div>

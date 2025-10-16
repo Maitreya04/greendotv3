@@ -204,7 +204,7 @@ export default function Home() {
       {/* Top Bar */}
       {!showOnboarding && (
         <div className="fixed top-0 left-0 right-0 z-30 pt-[max(0px,env(safe-area-inset-top))]">
-          <div className="mx-4 mt-3 h-16 rounded-2xl bg-white/80 text-black shadow-sm backdrop-blur-xl ring-1 ring-black/5 flex items-center justify-between px-4">
+          <div className="mx-4 md:mx-auto md:max-w-[900px] mt-3 h-16 rounded-2xl bg-white/80 text-black shadow-sm backdrop-blur-xl ring-1 ring-black/5 flex items-center justify-between px-4">
             <div className="text-xl font-bold select-none">🌱 VegWise</div>
             <div className="flex items-center justify-center">
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-emerald-700 text-xs font-medium ring-1 ring-emerald-200">
@@ -223,7 +223,7 @@ export default function Home() {
       {/* Bottom Card Actions */}
       {!showOnboarding && view === "scanner" && (
         <div className="fixed inset-x-0 bottom-0 z-30 pt-2 pb-[max(1rem,calc(1rem+env(safe-area-inset-bottom)))]">
-          <div className="mx-4 rounded-t-3xl bg-white text-black shadow-2xl ring-1 ring-black/5 p-6">
+          <div className="mx-4 md:mx-auto md:max-w-[900px] rounded-t-3xl bg-white text-black shadow-2xl ring-1 ring-black/5 p-6">
             {scannerStatus !== "error" && (
               <button
                 type="button"

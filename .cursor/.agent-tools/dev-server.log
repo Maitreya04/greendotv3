@@ -39,3 +39,24 @@
  ✓ Compiled in 221ms (1575 modules)
  ✓ Compiled in 267ms (1579 modules)
  ✓ Compiled in 154ms (1579 modules)
+ ✓ Compiled in 218ms (1579 modules)
+ ✓ Compiled in 132ms (1579 modules)
+ ✓ Compiled in 292ms (1583 modules)
+ ✓ Compiled in 220ms (1587 modules)
+ ⨯ ./app/layout.tsx:5:1
+Module not found: Can't resolve '@/components/PageTransition'
+  3 | import "./globals.css";
+  4 | import BottomNav from "@/components/BottomNav";
+> 5 | import PageTransition from "@/components/PageTransition";
+    | ^
+  6 |
+  7 | const geistSans = Geist({
+  8 |   variable: "--font-geist-sans",
+
+https://nextjs.org/docs/messages/module-not-found
+ ✓ Compiled in 46ms (712 modules)
+ ✓ Compiled in 177ms (1576 modules)
+ ✓ Compiled in 153ms (1590 modules)
+ ✓ Compiled in 278ms (1590 modules)
+ ✓ Compiled in 132ms (1590 modules)
+[?25h

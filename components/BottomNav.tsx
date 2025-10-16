@@ -78,7 +78,7 @@ export default function BottomNav() {
       style={{ paddingBottom: "env(safe-area-inset-bottom)", height: "72px" }}
       aria-label="Bottom Navigation"
     >
-      <ul className="mx-auto flex max-w-md items-stretch justify-around px-2 h-full">
+      <ul className="mx-auto flex max-w-md items-stretch justify-around px-4 h-full">
         {items.map(({ label, href, icon: Icon }) => {
           const isActive = pathname === href || (href !== "/" && pathname?.startsWith(href));
           return (
