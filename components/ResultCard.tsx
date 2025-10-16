@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useMemo, useState, useCallback, useEffect, useRef } from "react";
+import { useMemo, useState, useCallback, useEffect, useRef, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ProductResult as VegWiseProductResult, Reason as VegWiseReason } from "@/types";
 import Image from "next/image";
@@ -68,7 +68,7 @@ const ALLERGEN_ICON: Record<string, string> = {
 };
 
 const containerVariants = {
-  hidden: { opacity: 0, y: 24 },
+  hidden: { opacity: 0, y: 64 },
   visible: {
     opacity: 1,
     y: 0,
@@ -77,7 +77,7 @@ const containerVariants = {
       duration: 0.5,
       stiffness: 240,
       damping: 24,
-      staggerChildren: 0.08,
+      staggerChildren: 0.1,
       when: "beforeChildren",
     },
   },
@@ -120,6 +120,9 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
   const confidence = result.analysis.confidence ?? 0;
   const meta = verdictMeta(verdict);
   const confettiFiredRef = useRef(false);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const badgeRef = useRef<HTMLDivElement | null>(null);
+  const headingId = useId();
 
   const reasons = (result as any).reasons ?? result.analysis.reasons ?? [];
   const [expanded, setExpanded] = useState(false);
@@ -178,7 +181,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
 
   const progressWidth = `${Math.max(0, Math.min(100, confidence))}%`;
 
-  // Trigger a subtle confetti burst when verdict is 'yes'
+  // Trigger a subtle confetti burst when verdict is 'yes' (from badge origin)
   useEffect(() => {
     if (verdict !== "yes") return;
     if (confettiFiredRef.current) return;
@@ -189,6 +192,17 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
         const mod = await import("canvas-confetti");
         if (cancelled) return;
         const confetti = mod.default || (mod as any);
+        let origin = { x: 0.8, y: 0.15 };
+        try {
+          const el = badgeRef.current;
+          if (el && typeof window !== "undefined") {
+            const rect = el.getBoundingClientRect();
+            origin = {
+              x: (rect.left + rect.width / 2) / window.innerWidth,
+              y: (rect.top + rect.height / 2) / window.innerHeight,
+            };
+          }
+        } catch {}
         confetti({
           particleCount: 80,
           spread: 70,
@@ -196,7 +210,8 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
           gravity: 1.1,
           ticks: 120,
           scalar: 0.8,
-          origin: { y: 0.2 },
+          origin,
+          colors: ["#10b981", "#34d399", "#059669"],
         });
       } catch {}
     })();
@@ -205,19 +220,80 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
     };
   }, [verdict]);
 
+  // Basic focus trap + ESC to close
+  useEffect(() => {
+    const node = dialogRef.current;
+    if (!node) return;
+
+    const focusableSelectors = [
+      'a[href]',
+      'button:not([disabled])',
+      'textarea:not([disabled])',
+      'input:not([disabled])',
+      'select:not([disabled])',
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(',');
+
+    const focusFirst = () => {
+      try {
+        const focusables = Array.from(node.querySelectorAll<HTMLElement>(focusableSelectors));
+        (focusables[0] || node).focus();
+      } catch {}
+    };
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onScanAnother();
+        return;
+      }
+      if (e.key === "Tab") {
+        try {
+          const focusables = Array.from(node.querySelectorAll<HTMLElement>(focusableSelectors)).filter((el) => el.offsetParent !== null || el === document.activeElement);
+          if (focusables.length === 0) return;
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        } catch {}
+      }
+    };
+
+    focusFirst();
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onScanAnother]);
+
+  const fallbackCategoryEmoji = useMemo(() => {
+    try {
+      const normalized = result.ingredientsNormalized || [];
+      const hasGrain = normalized.some((i) => /wheat|rice|oat|barley|corn|maize/i.test(i));
+      if (hasGrain) return "🌾";
+    } catch {}
+    return "🥫";
+  }, [result.ingredientsNormalized]);
+
   return (
-    <motion.div
-      layout
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      whileHover={{ y: -4 }}
-      whileTap={{ scale: 0.98 }}
-      className="relative w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-md hover:shadow-lg transition-shadow"
-    >
-      {/* 1) Product Image Hero */}
-      <motion.div variants={itemVariants} className="relative">
-        <div className="relative h-56 w-full overflow-hidden rounded-t-2xl bg-gray-100">
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/40 backdrop-blur-sm">
+      <motion.div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={headingId}
+        layout
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="relative w-full h-[100dvh] sm:h-auto sm:max-w-2xl md:max-w-3xl md:w-[80%] overflow-y-auto rounded-none sm:rounded-3xl bg-white shadow-xl"
+      >
+        {/* 1) HERO SECTION */}
+        <motion.div variants={itemVariants} className="relative">
+          <div className="relative h-[280px] w-full overflow-hidden sm:rounded-t-3xl bg-gray-100">
           {result.image ? (
             isOptimizableHttpUrl(result.image) ? (
               <Image
@@ -237,213 +313,269 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
             )
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-              <span className="text-sm text-gray-500">No image available</span>
+              <span className="text-5xl" aria-hidden>{fallbackCategoryEmoji}</span>
+              <span className="sr-only">No product image available</span>
             </div>
           )}
-          <div className={`pointer-events-none absolute inset-0 bg-gradient-to-t ${meta.gradient}`}></div>
+            {/* Depth overlays */}
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/60 to-transparent mix-blend-multiply"></div>
+            <div className={`pointer-events-none absolute inset-0 bg-gradient-to-t ${meta.gradient}`}></div>
 
-          {/* Product name overlay */}
-          <div className="pointer-events-none absolute bottom-0 left-0 right-0 p-4">
-            <div className="truncate text-xl font-semibold text-white drop-shadow-sm">{name}</div>
-            <div className="mt-0.5 text-xs text-white/80">Barcode: {barcode}</div>
-          </div>
-
-          {/* Floating verdict badge */}
-          <motion.div
-            className="absolute right-4 top-4"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 260, damping: 22, delay: 0.1 }}
-          >
-            <div className={`flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium ${meta.bg} ${meta.fg} ring-1 ${meta.ring} shadow-md backdrop-blur-sm`}>
-              <span className="text-xl" aria-hidden>{meta.emoji}</span>
-              <span className="hidden sm:block">{meta.text}</span>
+            {/* Product info overlay */}
+            <div className="pointer-events-none absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 via-black/30 to-transparent">
+              <div id={headingId} className="truncate text-2xl font-bold text-white drop-shadow">{name}</div>
+              <div className="mt-0.5 text-sm text-white/80">{result.brand || ""}</div>
+              <div className="mt-0.5 text-xs font-mono text-white/70">Barcode: {barcode}</div>
             </div>
-          </motion.div>
-        </div>
-      </motion.div>
 
-      {/* 2) Verdict Section */}
-      <motion.div variants={itemVariants} className="px-4 pt-4">
-        <div className="flex items-center gap-3">
-          <div className="text-[4rem] leading-none" aria-hidden>{meta.emoji}</div>
-          <div>
-            <div className="text-2xl font-bold text-gray-900">{meta.text}</div>
-            <div className="text-sm text-gray-500">Confidence</div>
-          </div>
-        </div>
-        <div className="mt-3">
-          <div className="relative h-3 w-full overflow-hidden rounded-full bg-gray-100 ring-1 ring-gray-200">
+            {/* Floating verdict badge */}
             <motion.div
-              className={`h-full ${meta.bar}`}
-              initial={{ width: 0 }}
-              animate={{ width: progressWidth }}
-              transition={{ type: "spring", stiffness: 180, damping: 22 }}
-            />
-            <div className="pointer-events-none absolute inset-0">
-              <div className="absolute right-1 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-600">{confidence}%</div>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* 3) Flagged Ingredients */}
-      <motion.div variants={itemVariants} className="px-4 pt-4">
-        <div className="mb-2 text-sm font-semibold text-gray-900">Ingredients</div>
-        <div className="relative">
-          <AnimatePresence initial={false}>
-            <motion.div
-              key={expanded ? "expanded" : "collapsed"}
-              initial={{ height: 96, opacity: 1 }}
-              animate={{ height: expanded ? "auto" : 96 }}
-              exit={{ height: 96 }}
-              transition={{ type: "spring", stiffness: 220, damping: 26 }}
-              className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-800"
+              ref={badgeRef}
+              className="absolute right-4 top-4"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.1 }}
             >
-              <div className="whitespace-pre-wrap leading-relaxed">
-                {highlighted}
+              <div
+                className={`grid place-items-center rounded-full w-16 h-16 shadow-xl backdrop-blur ${
+                  verdict === "yes"
+                    ? "bg-emerald-500 text-white animate-pulse"
+                    : verdict === "no"
+                    ? "bg-red-500 text-white"
+                    : "bg-amber-500 text-white"
+                }`}
+                aria-label={`Verdict: ${meta.text}`}
+              >
+                <span className="text-4xl leading-none" aria-hidden>{verdict === "yes" ? "✓" : verdict === "no" ? "✗" : "!"}</span>
               </div>
             </motion.div>
-          </AnimatePresence>
-          <div className="mt-2 flex justify-end">
-            <motion.button
-              type="button"
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setExpanded((v) => !v)}
-              className="rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-700 ring-1 ring-gray-200 shadow-sm"
-            >
-              {expanded ? "Show less" : "Show full"}
-            </motion.button>
           </div>
-        </div>
+        </motion.div>
 
-        {Array.isArray(reasons) && reasons.length > 0 ? (
-          <motion.ul
-            className="mt-3 grid gap-1 text-sm text-gray-700"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 240, damping: 22, delay: 0.2 }}
+        {/* 2) VERDICT SECTION */}
+        <motion.div variants={itemVariants} className="px-4 pt-4">
+          <div
+            className={`rounded-2xl p-6 text-white shadow-sm bg-gradient-to-r ${
+              verdict === "yes"
+                ? "from-emerald-500 to-emerald-600"
+                : verdict === "no"
+                ? "from-red-500 to-red-600"
+                : "from-amber-500 to-amber-600"
+            }`}
           >
-            {(reasons as VegWiseReason[]).map((r, idx) => (
-              <li key={idx} className="flex items-center gap-2">
-                <span className={`h-2 w-2 shrink-0 rounded-full ${r.severity === "blocking" ? "bg-rose-500" : "bg-amber-500"}`}></span>
-                <span className={`capitalize ${categoryColor(r.category).replace("text-", "text-")}`}>
-                  Contains {r.ingredient} ({r.category})
-                </span>
-              </li>
-            ))}
-          </motion.ul>
-        ) : (
-          <div className="mt-2 text-sm text-gray-600">No specific issues detected.</div>
-        )}
-      </motion.div>
-
-      {/* 4) Info Cards Grid */}
-      <motion.div
-        variants={itemVariants}
-        className="px-4 pt-4"
-        transition={{ type: "spring", stiffness: 240, damping: 22, delay: 0.3 }}
-      >
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {/* Allergens card */}
-          <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200">
-            <div className="mb-2 text-sm font-semibold text-gray-900">Allergens</div>
-            {result.allergens && result.allergens.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {result.allergens.map((a) => {
-                  const key = String(a).toLowerCase().replace(/^en:/, "");
-                  const emoji = ALLERGEN_ICON[key] || "⚠️";
-                  return (
-                    <span
-                      key={`${key}`}
-                      className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-3 py-1 text-xs text-gray-800 ring-1 ring-gray-200"
-                    >
-                      <span aria-hidden>{emoji}</span>
-                      <span className="capitalize">{key}</span>
-                    </span>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-sm text-gray-600">None declared</div>
-            )}
-          </div>
-
-          {/* Nutrition card */}
-          {result.nutrition ? (
-            <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200">
-              <div className="mb-2 text-sm font-semibold text-gray-900">Nutrition (per 100g)</div>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-lg bg-gray-50 p-2">
-                  <div className="text-xs text-gray-500">Calories</div>
-                  <div className="text-sm font-semibold text-gray-900">{result.nutrition.calories ?? "-"}</div>
-                </div>
-                <div className="rounded-lg bg-gray-50 p-2">
-                  <div className="text-xs text-gray-500">Sugars</div>
-                  <div className="text-sm font-semibold text-gray-900">{result.nutrition.sugars ?? "-"}g</div>
-                </div>
-                <div className="rounded-lg bg-gray-50 p-2">
-                  <div className="text-xs text-gray-500">Protein</div>
-                  <div className="text-sm font-semibold text-gray-900">{result.nutrition.protein ?? "-"}g</div>
-                </div>
+            <div className="flex items-center gap-4">
+              <div className="text-[5rem] leading-none" aria-hidden>{verdict === "yes" ? "✅" : verdict === "no" ? "❌" : "⚠️"}</div>
+              <div>
+                <div className="text-3xl font-bold">{meta.text}</div>
+                <div className="text-sm/6 text-white/90">{dietMode ? `Verified for ${capitalize(dietMode)}` : "Diet analysis"}</div>
               </div>
             </div>
-          ) : (
-            <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200">
-              <div className="text-sm text-gray-600">Nutrition data not available</div>
+            <div className="mt-4">
+              <div className="relative h-2 w-full overflow-hidden rounded-full bg-white/20">
+                <motion.div
+                  className="h-full bg-white"
+                  initial={{ width: 0 }}
+                  animate={{ width: progressWidth }}
+                  transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-white/80">{confidence}% confidence</div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* 3) DETAILED ANALYSIS */}
+        <motion.div variants={itemVariants} className="px-4 pt-4">
+          {verdict !== "yes" && Array.isArray(reasons) && reasons.length > 0 && (
+            <div className="mb-3">
+              <div className="text-lg font-semibold mb-3">Issues detected</div>
+              <motion.ul
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  hidden: {},
+                  visible: { transition: { staggerChildren: 0.05 } },
+                }}
+                className="grid gap-2"
+              >
+                {(reasons as VegWiseReason[]).map((r, idx) => (
+                  <motion.li
+                    key={idx}
+                    variants={{ hidden: { opacity: 0, y: 6 }, visible: { opacity: 1, y: 0 } }}
+                    className={`flex items-start gap-3 rounded-lg p-3 ring-1 ${chipRing(r.category)} ${chipBg(r.category)} ${chipText(r.category)} border-l-4 ${chipBorder(r.category)}`}
+                    aria-label={`Contains ${r.ingredient}. ${r.explanation}`}
+                  >
+                    <span className="text-xl" aria-hidden>{chipEmoji(r.category)}</span>
+                    <div className="flex-1">
+                      <div className="font-medium">Contains: {r.ingredient}</div>
+                      <div className="text-sm opacity-70">{r.explanation || `Flagged as ${r.category}`}</div>
+                    </div>
+                  </motion.li>
+                ))}
+              </motion.ul>
             </div>
           )}
-        </div>
-      </motion.div>
 
-      {/* 5) Actions */}
-      <div className="pb-24" />
-      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] sm:bottom-4 z-40 flex justify-center px-4">
-        <div className="pointer-events-auto inline-flex items-center gap-3 rounded-full bg-white/90 p-2 shadow-xl ring-1 ring-gray-200 backdrop-blur">
-          <motion.button
-            type="button"
-            onClick={onScanAnother}
-            whileHover={{ y: -1 }}
-            whileTap={{ scale: 0.98 }}
-            className="rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-md min-h-11"
-          >
-            Scan Another
-          </motion.button>
-          <motion.button
-            type="button"
-            onClick={share}
-            aria-label="Share"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="grid h-11 w-11 place-items-center rounded-full bg-white text-gray-700 ring-1 ring-gray-200 shadow-sm"
-          >
-            <span aria-hidden>📤</span>
-          </motion.button>
-          <motion.button
-            type="button"
-            aria-label="History"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="grid h-11 w-11 place-items-center rounded-full bg-white text-gray-700 ring-1 ring-gray-200 shadow-sm"
-            onClick={() => {
-              try {
-                window.dispatchEvent(new CustomEvent("openHistory"));
-              } catch {}
-            }}
-          >
-            <span aria-hidden>🕘</span>
-          </motion.button>
-        </div>
-      </div>
+          {/* Original Ingredients (collapsible) */}
+          <div className="mb-2 text-sm font-semibold text-gray-900">Ingredients</div>
+          <div className="relative">
+            <AnimatePresence initial={false}>
+              <motion.div
+                key={expanded ? "expanded" : "collapsed"}
+                initial={{ height: 112, opacity: 1 }}
+                animate={{ height: expanded ? "auto" : 112 }}
+                exit={{ height: 112 }}
+                transition={{ type: "spring", stiffness: 220, damping: 26 }}
+                className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-800"
+              >
+                <div className="whitespace-pre-wrap leading-relaxed font-mono">
+                  {highlighted}
+                </div>
+              </motion.div>
+            </AnimatePresence>
+            <div className="mt-2 flex justify-end">
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setExpanded((v) => !v)}
+                className="rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-700 ring-1 ring-gray-200 shadow-sm"
+                aria-expanded={expanded}
+                aria-controls="ingredients-panel"
+              >
+                {expanded ? "Show less" : "View full ingredients"}
+              </motion.button>
+            </div>
+          </div>
+        </motion.div>
 
-      {/* 6) Source citation */}
-      <motion.div variants={itemVariants} className="px-4 pt-4 pb-6">
-        <div className="text-xs text-gray-500">
-          Data source: <a href={`https://world.openfoodfacts.org/product/${encodeURIComponent(barcode)}`} target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-700">Open Food Facts</a>. Ingredients and nutrition are sourced from OFF; dietary analysis is computed locally.
+        {/* 4) INFO CARDS GRID */}
+        <motion.div
+          variants={itemVariants}
+          className="px-4 pt-4"
+          transition={{ type: "spring", stiffness: 240, damping: 22, delay: 0.3 }}
+        >
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {/* Allergens */}
+            <div className="rounded-2xl p-4 shadow-sm border border-stone-100 bg-amber-50 hover:shadow-md transition-transform hover:-translate-y-0.5">
+              <div className="mb-2 text-sm font-semibold">⚠️ Allergens</div>
+              {result.allergens && result.allergens.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {result.allergens.map((a) => {
+                    const key = String(a).toLowerCase().replace(/^en:/, "");
+                    const emoji = ALLERGEN_ICON[key] || "⚠️";
+                    return (
+                      <span
+                        key={`${key}`}
+                        className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs text-gray-800 ring-1 ring-gray-200"
+                      >
+                        <span aria-hidden>{emoji}</span>
+                        <span className="capitalize">{key}</span>
+                      </span>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-sm text-emerald-700">No common allergens ✓</div>
+              )}
+            </div>
+
+            {/* Nutrition */}
+            <div className="rounded-2xl p-4 shadow-sm border border-stone-100 bg-emerald-50 hover:shadow-md transition-transform hover:-translate-y-0.5">
+              <div className="mb-2 text-sm font-semibold">📊 Nutrition</div>
+              {result.nutrition ? (
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <CircleStat label="Kcal" value={result.nutrition.calories ?? 0} unit="" pct={clamp((result.nutrition.calories ?? 0) / 300, 0, 1)} />
+                  <CircleStat label="Sugars" value={result.nutrition.sugars ?? 0} unit="g" pct={clamp((result.nutrition.sugars ?? 0) / 50, 0, 1)} />
+                  <CircleStat label="Protein" value={result.nutrition.protein ?? 0} unit="g" pct={clamp((result.nutrition.protein ?? 0) / 25, 0, 1)} />
+                </div>
+              ) : (
+                <div className="text-sm text-gray-500">Data not available</div>
+              )}
+            </div>
+
+            {/* Source */}
+            <div className="rounded-2xl p-4 shadow-sm border border-stone-100 bg-stone-50 hover:shadow-md transition-transform hover:-translate-y-0.5">
+              <div className="mb-2 text-sm font-semibold">🔗 Source</div>
+              <a
+                href={`https://world.openfoodfacts.org/product/${encodeURIComponent(barcode)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm underline underline-offset-4 decoration-stone-400 hover:decoration-stone-600"
+              >
+                Open Food Facts
+              </a>
+              <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-xs text-emerald-700 ring-1 ring-emerald-200">
+                <span aria-hidden>✓</span> Verified
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="rounded-2xl p-4 shadow-sm border border-stone-100 bg-white hover:shadow-md transition-transform hover:-translate-y-0.5">
+              <div className="mb-2 text-sm font-semibold">Quick actions</div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={share}
+                  aria-label="Share product"
+                  className="grid h-10 w-10 place-items-center rounded-xl ring-1 ring-stone-200 hover:bg-stone-100 transition"
+                >
+                  <span aria-hidden>📤</span>
+                </button>
+                <FavoriteButton barcode={barcode} />
+                <button
+                  type="button"
+                  aria-label="Report an issue"
+                  onClick={() => {
+                    try { window.dispatchEvent(new CustomEvent("reportProduct", { detail: { barcode } })); } catch {}
+                    alert("Thanks for your report. We'll review it.");
+                  }}
+                  className="grid h-10 w-10 place-items-center rounded-xl ring-1 ring-stone-200 hover:bg-stone-100 transition"
+                >
+                  <span aria-hidden>🚩</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* 5) BOTTOM ACTIONS */}
+        <div className="pb-[7.5rem] sm:pb-6" />
+        <div className="fixed inset-x-0 bottom-0 z-[70] bg-white/95 backdrop-blur border-t border-stone-200 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          <div className="mx-auto w-full max-w-2xl md:max-w-3xl">
+            <div className="flex items-center gap-3">
+              <motion.button
+                type="button"
+                onClick={onScanAnother}
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex-1 basis-[70%] h-14 rounded-xl bg-emerald-600 text-white font-semibold shadow-md grid place-items-center"
+                aria-label="Scan another product"
+              >
+                <span className="mr-2" aria-hidden>📷</span> Scan Another
+              </motion.button>
+              <button
+                type="button"
+                className="basis-[30%] h-14 rounded-xl bg-white text-gray-900 ring-1 ring-stone-300 hover:bg-stone-100 transition grid place-items-center"
+                aria-label="Open history"
+                onClick={() => {
+                  try { window.dispatchEvent(new CustomEvent("openHistory")); } catch {}
+                }}
+              >
+                <span className="mr-2" aria-hidden>🕘</span> History
+              </button>
+            </div>
+          </div>
         </div>
+
+        {/* 6) Source citation */}
+        <motion.div variants={itemVariants} className="px-4 pt-4 pb-6">
+          <div className="text-xs text-gray-500">
+            Data source: <a href={`https://world.openfoodfacts.org/product/${encodeURIComponent(barcode)}`} target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-700">Open Food Facts</a>. Ingredients and nutrition are sourced from OFF; dietary analysis is computed locally.
+          </div>
+        </motion.div>
       </motion.div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -484,6 +616,147 @@ function isOptimizableHttpUrl(url: string): boolean {
   } catch {
     return false;
   }
+}
+
+// Chip styles by category
+function chipEmoji(category: VegWiseReason["category"]) {
+  switch (category) {
+    case "meat":
+      return "🥩";
+    case "dairy":
+      return "🥛";
+    case "egg":
+      return "🥚";
+    case "honey":
+      return "🍯";
+    case "root":
+      return "🥕";
+    case "fungi":
+      return "🍄";
+    default:
+      return "⚠️";
+  }
+}
+
+function chipBg(category: VegWiseReason["category"]) {
+  switch (category) {
+    case "meat":
+      return "bg-red-50";
+    case "dairy":
+      return "bg-blue-50";
+    case "root":
+      return "bg-amber-50";
+    case "fungi":
+      return "bg-purple-50";
+    default:
+      return "bg-stone-50";
+  }
+}
+
+function chipBorder(category: VegWiseReason["category"]) {
+  switch (category) {
+    case "meat":
+      return "border-red-500";
+    case "dairy":
+      return "border-blue-500";
+    case "root":
+      return "border-amber-500";
+    case "fungi":
+      return "border-purple-500";
+    default:
+      return "border-stone-400";
+  }
+}
+
+function chipRing(category: VegWiseReason["category"]) {
+  switch (category) {
+    case "meat":
+      return "ring-red-100";
+    case "dairy":
+      return "ring-blue-100";
+    case "root":
+      return "ring-amber-100";
+    case "fungi":
+      return "ring-purple-100";
+    default:
+      return "ring-stone-100";
+  }
+}
+
+function chipText(category: VegWiseReason["category"]) {
+  switch (category) {
+    case "meat":
+      return "text-red-900";
+    case "dairy":
+      return "text-blue-900";
+    case "root":
+      return "text-amber-900";
+    case "fungi":
+      return "text-purple-900";
+    default:
+      return "text-stone-900";
+  }
+}
+
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
+}
+
+function capitalize(s: string) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+
+function FavoriteButton({ barcode }: { barcode: string }) {
+  const [fav, setFav] = React.useState<boolean>(false);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("greendot.favorites") || "{}";
+      const map = JSON.parse(raw) as Record<string, true>;
+      setFav(Boolean(map[barcode]));
+    } catch {}
+  }, [barcode]);
+  const toggle = useCallback(() => {
+    try {
+      const raw = localStorage.getItem("greendot.favorites") || "{}";
+      const map = JSON.parse(raw) as Record<string, true>;
+      if (map[barcode]) {
+        delete map[barcode];
+        setFav(false);
+      } else {
+        map[barcode] = true as true;
+        setFav(true);
+      }
+      localStorage.setItem("greendot.favorites", JSON.stringify(map));
+    } catch {}
+  }, [barcode]);
+  return (
+    <button
+      type="button"
+      aria-pressed={fav}
+      aria-label={fav ? "Remove from favorites" : "Save to favorites"}
+      onClick={toggle}
+      className={`grid h-10 w-10 place-items-center rounded-xl ring-1 ring-stone-200 hover:bg-stone-100 transition ${fav ? "text-rose-600" : "text-inherit"}`}
+    >
+      <span aria-hidden>{fav ? "❤️" : "🤍"}</span>
+    </button>
+  );
+}
+
+function CircleStat({ label, value, unit, pct }: { label: string; value: number; unit: string; pct: number }) {
+  const r = 18;
+  const circumference = 2 * Math.PI * r;
+  const stroke = Math.round(circumference * pct);
+  const remain = circumference - stroke;
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <svg width="48" height="48" viewBox="0 0 48 48" className="-rotate-90">
+        <circle cx="24" cy="24" r={r} fill="none" stroke="#e5e7eb" strokeWidth="6" />
+        <circle cx="24" cy="24" r={r} fill="none" stroke="#10b981" strokeWidth="6" strokeDasharray={`${stroke} ${remain}`} strokeLinecap="round" />
+      </svg>
+      <div className="text-lg font-bold leading-none">{Math.round(value)}{unit}</div>
+      <div className="text-xs text-gray-600">{label}</div>
+    </div>
+  );
 }
 
 
