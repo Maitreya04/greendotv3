@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ResultCard from "@/components/ResultCard";
-import { ResultSkeletonCard } from "@/components/Skeleton";
 import dynamic from "next/dynamic";
 import { fetchProduct, type ProductResult as OffProductResult } from "@/lib/offApi";
 import { analyzeIngredients, normalizeIngredients, type AnalysisResult } from "@/lib/analyze";
 import type { DietMode, ProductResult as TypesProductResult } from "@/types";
 import Onboarding from "@/components/Onboarding";
+import Link from "next/link";
+import { Settings as SettingsIcon } from "lucide-react";
 
 type ViewState = "scanner" | "result" | "error";
 
@@ -24,13 +25,16 @@ export default function Home() {
   const [dietMode, setDietMode] = useState<DietMode>("vegetarian");
   const [uploaderOpen, setUploaderOpen] = useState<boolean>(false);
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
+  const [gateReady, setGateReady] = useState<boolean>(false); // avoid mounting scanner before gate check
+  const [scannerStatus, setScannerStatus] = useState<"loading" | "scanning" | "error" | "success">("loading");
+  const [greenFlash, setGreenFlash] = useState<boolean>(false);
 
   const view: ViewState = useMemo(() => {
-    if (loading) return "result"; // show skeleton in result view while loading
-    if (error) return "error";
+    // Keep camera view visible during loading; switch to result only when we have data or error
     if (product) return "result";
+    if (error) return "error";
     return "scanner";
-  }, [loading, error, product]);
+  }, [error, product]);
   // Onboarding gate
   useEffect(() => {
     try {
@@ -46,6 +50,7 @@ export default function Home() {
         }
       }
     } catch {}
+    setGateReady(true);
   }, []);
 
   const handleOnboardingComplete = useCallback((prefs?: { diets?: DietMode[] }) => {
@@ -157,143 +162,170 @@ export default function Home() {
     };
   }, [product, analysis]);
 
+  // Fire subtle confetti and green flash on successful decode
+  useEffect(() => {
+    if (scannerStatus === "success") {
+      setGreenFlash(true);
+      try { if (typeof navigator !== "undefined" && (navigator as any).vibrate) (navigator as any).vibrate(15); } catch {}
+      (async () => {
+        try {
+          const mod = await import("canvas-confetti");
+          const confetti = (mod as any).default || mod;
+          confetti({ particleCount: 20, spread: 60, origin: { x: 0.5, y: 0.5 }, scalar: 0.7, ticks: 80, colors: ["#10b981", "#34d399", "#a7f3d0"] });
+        } catch {}
+      })();
+      const t = setTimeout(() => setGreenFlash(false), 300);
+      return () => clearTimeout(t);
+    }
+  }, [scannerStatus]);
+
+  // Until gate is checked, don't mount scanner to prevent mobile camera prompt
+  if (!gateReady) {
+    return (
+      <div className="min-h-screen w-full bg-gray-50 text-gray-900" />
+    );
+  }
+
   return (
-    <div className="min-h-screen w-full bg-gray-50 text-gray-900">
-      {showOnboarding && (
-        <div className="fixed inset-0 z-50 bg-white">
-          <Onboarding onComplete={handleOnboardingComplete} />
+    <div className="min-h-[100svh] w-full bg-black text-white">
+      {/* Camera Surface */}
+      {!showOnboarding && (
+        <div className="fixed inset-0 -z-10 opacity-0 data-ready:opacity-100 transition-opacity duration-500" data-ready={scannerStatus === "scanning" ? "true" : undefined}>
+          <Scanner
+            hideOverlay
+            onScanSuccess={handleScanSuccess}
+            onStatusChange={(s) => setScannerStatus(s)}
+          />
         </div>
       )}
-      <div className="mx-auto w-full px-4 py-4 sm:max-w-[600px] lg:max-w-[800px]">
-        <header className={"mb-4 items-center justify-between gap-3 " + (view === "scanner" ? "hidden sm:flex" : "flex")}>
-          <h1 className="text-lg font-semibold">Greendot</h1>
-          <DietSelector
-            value={dietMode}
-            onChange={(m) => setDietMode(m)}
-          />
-        </header>
 
-        {view === "scanner" && (
-          <section>
-            <Scanner onScanSuccess={handleScanSuccess} />
-            <p className="mt-3 text-center text-sm text-gray-600">
-              Point the camera at a barcode to scan.
-            </p>
-            <div className="mt-4 flex justify-center">
+      {/* Green success flash */}
+      {greenFlash && (
+        <div className="pointer-events-none fixed inset-0 z-40 bg-emerald-500/30" />
+      )}
+
+      {/* Top Bar */}
+      {!showOnboarding && (
+        <div className="fixed top-0 left-0 right-0 z-30 pt-[max(0px,env(safe-area-inset-top))]">
+          <div className="mx-4 mt-3 h-16 rounded-2xl bg-white/80 text-black shadow-sm backdrop-blur-xl ring-1 ring-black/5 flex items-center justify-between px-4">
+            <div className="text-xl font-bold select-none">🌱 VegWise</div>
+            <div className="flex items-center justify-center">
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-emerald-700 text-xs font-medium ring-1 ring-emerald-200">
+                {capitalize(dietMode)}
+              </span>
+            </div>
+            <Link href="/settings" aria-label="Settings" className="grid h-9 w-9 place-items-center rounded-xl text-emerald-700 hover:bg-emerald-50 ring-1 ring-emerald-200">
+              <SettingsIcon size={18} />
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Scanner Guide Overlay */}
+      {!showOnboarding && view === "scanner" && (
+        <div className="fixed inset-0 z-20">
+          {/* Loading overlay (camera init or fetching product) */}
+          {(scannerStatus === "loading" || loading) && (
+            <div className="absolute inset-0 backdrop-blur-sm bg-black/20 grid place-items-center">
+              <div className="flex flex-col items-center gap-3">
+                <div className="h-10 w-10 rounded-full border-4 border-emerald-400 border-t-transparent animate-spin" />
+                <div className="text-sm text-white drop-shadow">
+                  {loading ? (
+                    <span>
+                      Reading product<span className="animate-ellipsis">...</span>
+                    </span>
+                  ) : (
+                    <span>Initializing camera...</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Error state */}
+          {scannerStatus === "error" && (
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm grid place-items-center animate-shake">
+              <div className="mx-6 max-w-sm rounded-2xl bg-white/95 p-5 text-black shadow-2xl ring-1 ring-black/10">
+                <div className="text-lg font-semibold mb-1">We need camera access</div>
+                <div className="text-sm text-stone-600">Camera not available. Check permissions and try again.</div>
+                <div className="mt-3 grid gap-2">
+                  <Link href="https://support.apple.com/en-us/HT209175" target="_blank" className="text-sm underline text-emerald-700">iOS: Enable camera for Safari</Link>
+                  <Link href="https://support.google.com/chrome/answer/2693767" target="_blank" className="text-sm underline text-emerald-700">Android/Chrome: Allow camera</Link>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Guide box */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <div className="relative h-[100px] w-[250px] rounded-2xl">
+              <div className="absolute inset-0 rounded-2xl border-2 border-dashed border-white/80 shadow-[0_0_20px_rgba(0,0,0,0.25)] animate-breathe" />
+              {/* Corners */}
+              <span className="absolute -left-1 -top-1 h-6 w-6 border-l-2 border-t-2 border-white/90 rounded-tl-md animate-corner" />
+              <span className="absolute -right-1 -top-1 h-6 w-6 border-r-2 border-t-2 border-white/90 rounded-tr-md animate-corner" />
+              <span className="absolute -left-1 -bottom-1 h-6 w-6 border-l-2 border-b-2 border-white/90 rounded-bl-md animate-corner" />
+              <span className="absolute -right-1 -bottom-1 h-6 w-6 border-r-2 border-b-2 border-white/90 rounded-br-md animate-corner" />
+            </div>
+            <div className="mt-4 text-center text-sm text-white drop-shadow">Point at barcode</div>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom Card Actions */}
+      {!showOnboarding && view === "scanner" && (
+        <div className="fixed inset-x-0 bottom-0 z-30 pt-2 pb-[max(1rem,calc(1rem+env(safe-area-inset-bottom)))]">
+          <div className="mx-4 rounded-t-3xl bg-white text-black shadow-2xl ring-1 ring-black/5 p-6">
+            {scannerStatus !== "error" && (
               <button
                 type="button"
                 onClick={() => setUploaderOpen(true)}
-                className="inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-gray-900 ring-1 ring-gray-300 hover:bg-gray-100 active:bg-gray-200"
+                className="w-full h-14 rounded-xl ring-1 ring-emerald-300 text-emerald-700 bg-white hover:bg-emerald-50 font-medium transition-transform hover:-translate-y-0.5 shadow-sm"
               >
-                <span className="text-lg" aria-hidden>🖼️</span>
-                <span className="text-sm font-medium">Can't scan? Upload photo</span>
+                <span className="mr-2" aria-hidden>📸</span> Upload Photo
               </button>
-            </div>
-          </section>
-        )}
+            )}
+            <div className="mt-3 text-center text-xs text-stone-500">Powered by Open Food Facts</div>
+          </div>
+        </div>
+      )}
 
-        {view === "result" && (
-          <section>
-            <div className="mx-auto w-full sm:max-w-[600px]">
-              {loading && <ResultSkeletonCard />}
-              {!loading && uiResult && (
-                <ResultCard result={uiResult} onScanAnother={resetAll} dietMode={dietMode} />
-              )}
-            </div>
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={resetAll}
-                className="rounded-md bg-gray-900 px-4 py-2 text-white hover:bg-black active:opacity-90"
-              >
-                Scan Another
-              </button>
-              {error && (
-                <button
-                  type="button"
-                  onClick={retryFetch}
-                  className="rounded-md bg-white px-4 py-2 text-gray-900 ring-1 ring-gray-300 hover:bg-gray-100 active:bg-gray-200"
-                >
-                  Retry
-                </button>
-              )}
-            </div>
-          </section>
-        )}
+      {/* Result overlay */}
+      {!showOnboarding && view === "result" && uiResult && (
+        <ResultCard result={uiResult} onScanAnother={resetAll} dietMode={dietMode} />
+      )}
 
-        {view === "error" && (
-          <section>
-            <ErrorCard message={error ?? "Something went wrong."} onRetry={retryFetch} onReset={resetAll} />
-          </section>
-        )}
-
-        {/* Uploader overlay */}
+      {/* Uploader overlay */}
+      {!showOnboarding && (
         <PhotoUpload
           open={uploaderOpen}
           onClose={() => setUploaderOpen(false)}
           dietMode={dietMode}
         />
-      </div>
-    </div>
-  );
-}
-
-function DietSelector({ value, onChange }: { value: DietMode; onChange: (m: DietMode) => void }) {
-  const options: { key: DietMode; label: string }[] = [
-    { key: "vegetarian", label: "Veg" },
-    { key: "vegan", label: "Vegan" },
-    { key: "jain", label: "Jain" },
-  ];
-  return (
-    <div className="inline-flex items-center gap-1 rounded-full bg-gray-200 p-1">
-      {options.map((opt) => {
-        const active = value === opt.key;
-        return (
-          <button
-            key={opt.key}
-            type="button"
-            onClick={() => onChange(opt.key)}
-            className={
-              "px-3 py-1 text-sm rounded-full transition-colors " +
-              (active ? "bg-white text-gray-900 shadow" : "text-gray-700 hover:bg-white/60")
-            }
-          >
-            {opt.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function ErrorCard({ message, onRetry, onReset }: { message: string; onRetry: () => void; onReset: () => void }) {
-  const isNetwork = /network/i.test(message);
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 text-center shadow-sm">
-      <div className="mb-2 text-base font-semibold">We couldn't load that</div>
-      <div className="mb-4 text-sm text-gray-700">{message}</div>
-      <div className="flex items-center justify-center gap-3">
-        {isNetwork && (
-          <button
-            type="button"
-            onClick={onRetry}
-            className="rounded-md bg-gray-900 px-4 py-2 text-white hover:bg-black active:opacity-90"
-          >
-            Retry
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={onReset}
-          className="rounded-md bg-white px-4 py-2 text-gray-900 ring-1 ring-gray-300 hover:bg-gray-100 active:bg-gray-200"
-        >
-          Scan Another
-        </button>
-      </div>
-      {!isNetwork && (
-        <div className="mt-3 text-xs text-gray-500">Tip: Try another product or upload a clear photo of the ingredients.</div>
       )}
+
+      {/* Onboarding overlay */}
+      {showOnboarding && (
+        <div className="fixed inset-0 z-50 bg-white">
+          <Onboarding onComplete={handleOnboardingComplete} />
+        </div>
+      )}
+
+      {/* Local styles for subtle animations */}
+      <style jsx>{`
+        .animate-breathe { animation: breathe 1.4s ease-in-out infinite; }
+        @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 0.9; } 50% { transform: scale(1.05); opacity: 1; } }
+        .animate-corner { animation: cornerPulse 1.2s ease-in-out infinite; }
+        @keyframes cornerPulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+        .animate-ellipsis { display: inline-block; overflow: hidden; vertical-align: bottom; }
+        .animate-ellipsis::after { content: "…"; animation: dots 1.4s steps(4, end) infinite; }
+        @keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } 100% { content: ""; } }
+        .animate-shake { animation: shake 450ms ease-in-out 1; }
+        @keyframes shake { 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(2px); } 30%, 50%, 70% { transform: translateX(-3px); } 40%, 60% { transform: translateX(3px); } }
+        [data-ready] { opacity: 1; }
+      `}</style>
     </div>
   );
 }
+
+function capitalize(s: string) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 

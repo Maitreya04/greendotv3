@@ -7,9 +7,11 @@ import dynamic from "next/dynamic";
 type ScannerProps = {
   onScanSuccess: (barcode: string) => void;
   className?: string;
+  hideOverlay?: boolean; // when true, render only the camera surface; page can draw its own UI
+  onStatusChange?: (status: "loading" | "scanning" | "error" | "success") => void;
 };
 
-const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
+const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className, hideOverlay, onStatusChange }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const scannerId = useId().replace(/[:]/g, "_");
   const html5QrcodeRef = useRef<any>(null);
@@ -328,6 +330,11 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Notify parent about status changes for higher-level UI handling
+  useEffect(() => {
+    try { onStatusChange && onStatusChange(status); } catch {}
+  }, [status, onStatusChange]);
+
   // Keep overlay sized to container; react to rotations/resizes
   useEffect(() => {
     const el = containerRef.current;
@@ -368,14 +375,14 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
         <div className="relative w-full h-full sm:h-auto sm:max-w-[500px] sm:aspect-[3/4] overflow-hidden">
           {/* Camera feed mount */}
           <div ref={containerRef} className="absolute inset-0 bg-black">
-            {status === "loading" && (
+            {!hideOverlay && status === "loading" && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
                 <CameraPulseIcon />
                 <div className="animate-pulse text-sm text-gray-300">Initializing camera...</div>
               </div>
             )}
 
-            {status === "error" && (
+            {!hideOverlay && status === "error" && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60 text-white">
                 <div className="text-lg font-medium">Camera not available</div>
                 <button
@@ -389,7 +396,7 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
             )}
 
             {/* Controls */}
-            {canFlip && (
+            {!hideOverlay && canFlip && (
               <button
                 type="button"
                 aria-label="Flip camera"
@@ -405,7 +412,7 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
             )}
 
             {/* Instruction card */}
-            {status === "scanning" && showInstructions && (
+            {!hideOverlay && status === "scanning" && showInstructions && (
               <div className="absolute left-1/2 -translate-x-1/2 top-4 flex items-center gap-2 px-3 py-2 rounded-xl glass-card text-white animate-slide-up">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
                   <path d="M7 7h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2zm5 1.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9z" stroke="currentColor" strokeWidth="1.5" fill="none"/>
@@ -416,7 +423,7 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
             )}
 
             {/* Tap overlay for focus */}
-            {status === "scanning" && (
+            {!hideOverlay && status === "scanning" && (
               <div
                 className="absolute inset-0 z-10"
                 role="button"
@@ -427,7 +434,7 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
             )}
 
             {/* Premium scanner overlay (square) */}
-            {status !== "error" && (
+            {!hideOverlay && status !== "error" && (
               <div
                 className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
                 style={{ width: SCAN_BOX.width, height: SCAN_BOX.height }}
@@ -453,14 +460,14 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
             )}
 
             {/* Searching status (safe-area aware) */}
-            {status === "scanning" && (
+            {!hideOverlay && status === "scanning" && (
               <div className="absolute left-1/2 -translate-x-1/2 bottom-[calc(1.5rem+env(safe-area-inset-bottom))] sm:bottom-6 text-center text-sm text-white/90">
                 <span className="inline-block animate-search-fade">Searching for barcode...</span>
               </div>
             )}
 
             {/* Tap focus reticle */}
-            {tapPoint && (
+            {!hideOverlay && tapPoint && (
               <div
                 className="pointer-events-none absolute z-20 h-10 w-10 -translate-x-1/2 -translate-y-1/2"
                 style={{ left: tapPoint.x, top: tapPoint.y }}
@@ -472,7 +479,7 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
             )}
 
             {/* Success animation overlay */}
-            {status === "success" && (
+            {!hideOverlay && status === "success" && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                 <div className="flex items-center justify-center w-20 h-20 rounded-full bg-emerald-500 text-white animate-scale-in shadow-[0_0_0_0_rgba(16,185,129,0.7)] animate-pulse-success">
                   <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

@@ -1,0 +1,41 @@
+
+> greendotv3@0.1.0 dev
+> next dev
+
+   ▲ Next.js 15.5.5
+   - Local:        http://localhost:3000
+   - Network:      http://10.0.0.218:3000
+
+ ✓ Starting...
+ ✓ Ready in 1127ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1088ms (1536 modules)
+ GET / 200 in 1319ms
+ ✓ Compiled in 270ms (688 modules)
+ GET / 200 in 35ms
+ ✓ Compiled /favicon.ico in 115ms (865 modules)
+ GET /favicon.ico 200 in 186ms
+ ✓ Compiled in 111ms (688 modules)
+ ✓ Compiled in 54ms (688 modules)
+ ✓ Compiled in 101ms (688 modules)
+ ✓ Compiled in 64ms (688 modules)
+ GET / 200 in 164ms
+ ✓ Compiled /settings in 242ms (1557 modules)
+ GET /settings 200 in 335ms
+ GET /settings 200 in 20ms
+ ✓ Compiled /_not-found in 152ms (1562 modules)
+ GET /history 404 in 198ms
+ GET /history 404 in 86ms
+ GET / 200 in 32ms
+ ✓ Compiled in 79ms (708 modules)
+ ✓ Compiled in 54ms (708 modules)
+ ✓ Compiled in 63ms (708 modules)
+ ✓ Compiled in 245ms (1575 modules)
+ ✓ Compiled in 106ms (1575 modules)
+ ✓ Compiled in 206ms (1575 modules)
+ ✓ Compiled in 126ms (1575 modules)
+ ✓ Compiled in 208ms (1575 modules)
+ ✓ Compiled in 113ms (1575 modules)
+ ✓ Compiled in 221ms (1575 modules)
+ ✓ Compiled in 267ms (1579 modules)
+ ✓ Compiled in 154ms (1579 modules)

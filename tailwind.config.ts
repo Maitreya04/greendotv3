@@ -1,5 +1,6 @@
 import type { Config } from "tailwindcss";
 import { colors as designColors, animations as designAnimations, shadows as designShadows } from "./lib/design";
+import { colors as dsColors, typography as dsTypography, spacing as dsSpacing, elevation as dsElevation, radii as dsRadii, motion as dsMotion } from "./lib/design-system";
 
 const config: Config = {
   content: [
@@ -8,6 +9,21 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: dsTypography.fontFamily.sans,
+        mono: dsTypography.fontFamily.mono,
+      },
+      fontSize: {
+        xs: dsTypography.fontSize.xs,
+        sm: dsTypography.fontSize.sm,
+        base: dsTypography.fontSize.base,
+        lg: dsTypography.fontSize.lg,
+        xl: dsTypography.fontSize.xl,
+        "2xl": dsTypography.fontSize["2xl"],
+        "3xl": dsTypography.fontSize["3xl"],
+        "4xl": dsTypography.fontSize["4xl"],
+        "5xl": dsTypography.fontSize["5xl"],
+      },
       colors: {
         safe: designColors.safe,
         unsafe: designColors.unsafe,
@@ -17,6 +33,20 @@ const config: Config = {
         text: {
           primary: designColors.text.primary,
           secondary: designColors.text.secondary,
+        },
+        // Brand primary emerald spectrum
+        primary: {
+          50: dsColors.primary[50],
+          100: dsColors.primary[100],
+          200: dsColors.primary[200],
+          300: dsColors.primary[300],
+          400: dsColors.primary[400],
+          500: dsColors.primary[500],
+          600: dsColors.primary[600],
+          700: dsColors.primary[700],
+          800: dsColors.primary[800],
+          900: dsColors.primary[900],
+          950: dsColors.primary[950],
         },
         emerald: {
           50: "#ecfdf5",
@@ -30,6 +60,18 @@ const config: Config = {
           800: "#065f46",
           900: "#064e3b",
           950: "#022c22",
+        },
+        stone: {
+          50: dsColors.stone[50],
+          100: dsColors.stone[100],
+          200: dsColors.stone[200],
+          300: dsColors.stone[300],
+          400: dsColors.stone[400],
+          500: dsColors.stone[500],
+          600: dsColors.stone[600],
+          700: dsColors.stone[700],
+          800: dsColors.stone[800],
+          900: dsColors.stone[900],
         },
         red: {
           50: "#fef2f2",
@@ -57,8 +99,46 @@ const config: Config = {
           900: "#78350f",
           950: "#451a03",
         },
+        // Accents
+        accent: {
+          pink: dsColors.accents.pink100,
+          lime: dsColors.accents.lime100,
+          amber: dsColors.accents.amber100,
+          blue: dsColors.accents.blue100,
+        },
+        // Status aliases
+        success: dsColors.success,
+        warning: dsColors.warning,
+        danger: dsColors.danger,
+      },
+      spacing: {
+        0: dsSpacing.scale[0],
+        1: dsSpacing.scale[1],
+        2: dsSpacing.scale[2],
+        3: dsSpacing.scale[3],
+        4: dsSpacing.scale[4],
+        6: dsSpacing.scale[6],
+        8: dsSpacing.scale[8],
+        12: dsSpacing.scale[12],
+        16: dsSpacing.scale[16],
+        24: dsSpacing.scale[24],
+        32: dsSpacing.scale[32],
+        48: dsSpacing.scale[48],
+        64: dsSpacing.scale[64],
+        96: dsSpacing.scale[96],
+      },
+      borderRadius: {
+        sm: dsRadii.sm,
+        md: dsRadii.md,
+        lg: dsRadii.lg,
+        xl: dsRadii.xl,
+        full: dsRadii.full,
       },
       boxShadow: {
+        sm: dsElevation.sm,
+        md: dsElevation.md,
+        lg: dsElevation.lg,
+        xl: dsElevation.xl,
         card: designShadows.card,
         "card-hover": designShadows.cardHover,
         floating: designShadows.floating,
@@ -86,11 +166,19 @@ const config: Config = {
         },
       },
       animation: {
-        "fade-in": designAnimations.fadeIn,
-        "slide-up": designAnimations.slideUp,
-        "scale-in": designAnimations.scaleIn,
+        "fade-in": dsMotion.animations.fadeIn,
+        "slide-up": dsMotion.animations.slideUp,
+        "scale-in": dsMotion.animations.scaleIn,
         "pulse-success": "pulse-success 1.5s ease-in-out infinite",
         shimmer: "shimmer 1.8s linear infinite",
+      },
+      transitionDuration: {
+        micro: dsMotion.duration.micro,
+        standard: dsMotion.duration.standard,
+        entrance: dsMotion.duration.entrance,
+      },
+      transitionTimingFunction: {
+        brand: dsMotion.easing.brand,
       },
     },
   },
