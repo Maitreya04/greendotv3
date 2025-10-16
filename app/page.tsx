@@ -188,15 +188,12 @@ export default function Home() {
 
   return (
     <div className="min-h-[100svh] w-full bg-black text-white">
-      {/* Camera Surface */}
+      {/* Camera Surface - use Scanner's own overlay and keep it visible */}
       {!showOnboarding && (
-        <div className="fixed inset-0 -z-10 opacity-0 data-ready:opacity-100 transition-opacity duration-500" data-ready={scannerStatus === "scanning" ? "true" : undefined}>
-          <Scanner
-            hideOverlay
-            onScanSuccess={handleScanSuccess}
-            onStatusChange={(s) => setScannerStatus(s)}
-          />
-        </div>
+        <Scanner
+          onScanSuccess={handleScanSuccess}
+          onStatusChange={(s) => setScannerStatus(s)}
+        />
       )}
 
       {/* Green success flash */}
@@ -221,55 +218,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Scanner Guide Overlay */}
-      {!showOnboarding && view === "scanner" && (
-        <div className="fixed inset-0 z-20">
-          {/* Loading overlay (camera init or fetching product) */}
-          {(scannerStatus === "loading" || loading) && (
-            <div className="absolute inset-0 backdrop-blur-sm bg-black/20 grid place-items-center">
-              <div className="flex flex-col items-center gap-3">
-                <div className="h-10 w-10 rounded-full border-4 border-emerald-400 border-t-transparent animate-spin" />
-                <div className="text-sm text-white drop-shadow">
-                  {loading ? (
-                    <span>
-                      Reading product<span className="animate-ellipsis">...</span>
-                    </span>
-                  ) : (
-                    <span>Initializing camera...</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Error state */}
-          {scannerStatus === "error" && (
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm grid place-items-center animate-shake">
-              <div className="mx-6 max-w-sm rounded-2xl bg-white/95 p-5 text-black shadow-2xl ring-1 ring-black/10">
-                <div className="text-lg font-semibold mb-1">We need camera access</div>
-                <div className="text-sm text-stone-600">Camera not available. Check permissions and try again.</div>
-                <div className="mt-3 grid gap-2">
-                  <Link href="https://support.apple.com/en-us/HT209175" target="_blank" className="text-sm underline text-emerald-700">iOS: Enable camera for Safari</Link>
-                  <Link href="https://support.google.com/chrome/answer/2693767" target="_blank" className="text-sm underline text-emerald-700">Android/Chrome: Allow camera</Link>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Guide box */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <div className="relative h-[100px] w-[250px] rounded-2xl">
-              <div className="absolute inset-0 rounded-2xl border-2 border-dashed border-white/80 shadow-[0_0_20px_rgba(0,0,0,0.25)] animate-breathe" />
-              {/* Corners */}
-              <span className="absolute -left-1 -top-1 h-6 w-6 border-l-2 border-t-2 border-white/90 rounded-tl-md animate-corner" />
-              <span className="absolute -right-1 -top-1 h-6 w-6 border-r-2 border-t-2 border-white/90 rounded-tr-md animate-corner" />
-              <span className="absolute -left-1 -bottom-1 h-6 w-6 border-l-2 border-b-2 border-white/90 rounded-bl-md animate-corner" />
-              <span className="absolute -right-1 -bottom-1 h-6 w-6 border-r-2 border-b-2 border-white/90 rounded-br-md animate-corner" />
-            </div>
-            <div className="mt-4 text-center text-sm text-white drop-shadow">Point at barcode</div>
-          </div>
-        </div>
-      )}
+      {/* Remove page-level scanner overlay; rely on Scanner component's overlay */}
 
       {/* Bottom Card Actions */}
       {!showOnboarding && view === "scanner" && (
