@@ -24,8 +24,8 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [dietMode, setDietMode] = useState<DietMode>("vegetarian");
   const [uploaderOpen, setUploaderOpen] = useState<boolean>(false);
-  const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
-  const [gateReady, setGateReady] = useState<boolean>(false); // avoid mounting scanner before gate check
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(true);
+  const [gateReady, setGateReady] = useState<boolean>(true); // avoid mounting scanner before gate check
   const [scannerStatus, setScannerStatus] = useState<"loading" | "scanning" | "error" | "success">("loading");
   const [greenFlash, setGreenFlash] = useState<boolean>(false);
 
