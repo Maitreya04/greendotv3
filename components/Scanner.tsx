@@ -20,6 +20,7 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
   const currentDeviceIdRef = useRef<string | null>(null);
   const [showInstructions, setShowInstructions] = useState<boolean>(true);
   const [tapPoint, setTapPoint] = useState<{ x: number; y: number } | null>(null);
+  const cancelFastLoopRef = useRef<() => void>(() => {});
 
   // Horizontal scan box tuned for 1D barcodes (responsive, updated via state)
   const [scanBox, setScanBox] = useState<{ width: number; height: number }>({ width: 320, height: 120 });
@@ -28,6 +29,7 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
 
   const stopScanner = async () => {
     try {
+      try { cancelFastLoopRef.current && cancelFastLoopRef.current(); } catch {}
       if (html5QrcodeRef.current) {
         await html5QrcodeRef.current.stop();
         await html5QrcodeRef.current.clear();
@@ -93,9 +95,10 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
       const config = {
         fps: 24,
         // Make the detection area large and responsive for easy framing
-        qrbox: (vfWidth: number, _vfHeight: number) => {
-          const w = Math.round(clamp(vfWidth * 0.92, 320, Math.min(900, vfWidth)));
-          const h = Math.round(clamp(w * 0.22, 110, 200));
+        // Square qrbox to reduce false positives from text and keep a consistent crop
+        qrbox: (vfWidth: number, vfHeight: number) => {
+          const side = Math.round(clamp(Math.min(vfWidth, vfHeight) * 0.86, 260, Math.min(900, Math.min(vfWidth, vfHeight))));
+          const w = side; const h = side;
           try { setScanBox({ width: w, height: h }); } catch {}
           return { width: w, height: h } as any;
         },
@@ -156,12 +159,85 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
       await html5QrcodeRef.current.start(startConfig, config, onSuccess, onError);
       // Immediately enable continuous autofocus if supported to reduce time-to-read
       try { await attemptTapToFocus(); } catch {}
+      // Start a lightweight, square-crop BarcodeDetector loop for ultra-low latency
+      try { startFastBarcodeLoop(); } catch {}
       setStatus("scanning");
     } catch (_e) {
       await stopScanner();
       setStatus("error");
     }
   };
+
+  function startFastBarcodeLoop() {
+    const w = (window as any);
+    if (!w || !w.BarcodeDetector) return;
+    const video = containerRef.current?.querySelector("video") as HTMLVideoElement | null;
+    if (!video) return;
+    let stop = false;
+    cancelFastLoopRef.current = () => { stop = true; };
+    const formats = ["ean-13","ean-8","upc-a","upc-e","code-128","code-39","itf"];
+    const detector: any = new (w as any).BarcodeDetector({ formats });
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true }) as CanvasRenderingContext2D | null;
+    let lastTs = 0;
+    const loop = async (ts: number) => {
+      if (stop) return;
+      try {
+        if (!video.videoWidth || !video.videoHeight || !ctx) {
+          requestAnimationFrame(loop);
+          return;
+        }
+        // Throttle ~20fps
+        if (ts - lastTs < 50) { requestAnimationFrame(loop); return; }
+        lastTs = ts;
+        const container = containerRef.current as HTMLDivElement | null;
+        if (!container) { requestAnimationFrame(loop); return; }
+        const cw = container.clientWidth;
+        const ch = container.clientHeight;
+        const side = Math.round(Math.min(cw, ch) * 0.86);
+        const left = Math.round((cw - side) / 2);
+        const top = Math.round((ch - side) / 2);
+        // Map container crop to video source rect (object-fit: cover)
+        const vr = video.videoWidth / video.videoHeight;
+        const r = cw / ch;
+        let displayedW = cw, displayedH = ch, xOff = 0, yOff = 0;
+        if (vr > r) {
+          displayedH = ch; displayedW = ch * vr; xOff = (displayedW - cw) / 2; yOff = 0;
+        } else {
+          displayedW = cw; displayedH = cw / vr; yOff = (displayedH - ch) / 2; xOff = 0;
+        }
+        const scaleX = video.videoWidth / displayedW;
+        const scaleY = video.videoHeight / displayedH;
+        const sx = Math.max(0, Math.round((left + xOff) * scaleX));
+        const sy = Math.max(0, Math.round((top + yOff) * scaleY));
+        const sw = Math.min(video.videoWidth - sx, Math.round(side * scaleX));
+        const sh = Math.min(video.videoHeight - sy, Math.round(side * scaleY));
+        // Draw to a modest canvas to keep detection fast
+        const CAN = 512;
+        canvas.width = CAN; canvas.height = CAN;
+        ctx.drawImage(video, sx, sy, sw, sh, 0, 0, CAN, CAN);
+        const codes: any[] = await detector.detect(canvas as any);
+        if (codes && codes.length > 0) {
+          const best = (codes as any[])[0];
+          const val: string = String(best.rawValue || "").trim();
+          const box = best.boundingBox || { width: 0, height: 1 };
+          const ratio = box.width / Math.max(1, box.height);
+          const looksLinear = ratio > 1.6 || ratio < 0.62; // prefer long rectangles
+          const likelyRetail = /^\d{8,14}$/.test(val) || /^(ITF|CODE)/i.test(String(best.format || ""));
+          if (val && looksLinear && likelyRetail) {
+            if (!hasDecodedRef.current) {
+              hasDecodedRef.current = true;
+              try { await stopScanner(); } catch {}
+              setTimeout(() => onScanSuccess(val), 100);
+              return;
+            }
+          }
+        }
+      } catch {}
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  }
 
   const attemptTapToFocus = async (poi?: { nx: number; ny: number }) => {
     try {
@@ -350,7 +426,7 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
               />
             )}
 
-            {/* Premium scanner overlay */}
+            {/* Premium scanner overlay (square) */}
             {status !== "error" && (
               <div
                 className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
@@ -370,6 +446,8 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
                     <span className="absolute left-0 bottom-0 h-6 w-6 border-b-2 border-l-2 border-emerald-400/90 rounded-bl-md animate-bracket" />
                     <span className="absolute right-0 bottom-0 h-6 w-6 border-b-2 border-r-2 border-emerald-400/90 rounded-br-md animate-bracket" />
                   </div>
+                  {/* Guide line in the center to align barcode stripes */}
+                  <div className="absolute left-2 right-2 top-1/2 -translate-y-1/2 h-[2px] bg-gradient-to-r from-transparent via-emerald-400/70 to-transparent" />
                 </div>
               </div>
             )}
