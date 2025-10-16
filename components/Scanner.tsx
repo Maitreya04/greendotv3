@@ -21,8 +21,8 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
   const [showInstructions, setShowInstructions] = useState<boolean>(true);
   const [tapPoint, setTapPoint] = useState<{ x: number; y: number } | null>(null);
 
-  // Keep scanner box size in sync with html5-qrcode qrbox
-  const SCAN_BOX = { width: 280, height: 140 } as const;
+  // Horizontal scan box tuned for 1D barcodes
+  const SCAN_BOX = { width: 320, height: 120 } as const;
 
   const stopScanner = async () => {
     try {
@@ -89,9 +89,25 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
         startConfig = { facingMode } as any;
       }
       const config = {
-        fps: 10,
+        fps: 24,
         qrbox: { width: SCAN_BOX.width, height: SCAN_BOX.height },
         aspectRatio: 1.7777778,
+        // Prefer BarcodeDetector API for 1D barcodes when supported (much faster on mobile)
+        experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+        // Broaden formats to include common retail barcodes
+        formatsToSupport: [
+          // EAN / UPC family
+          (await import("html5-qrcode")).Html5QrcodeSupportedFormats.EAN_13,
+          (await import("html5-qrcode")).Html5QrcodeSupportedFormats.EAN_8,
+          (await import("html5-qrcode")).Html5QrcodeSupportedFormats.UPC_A,
+          (await import("html5-qrcode")).Html5QrcodeSupportedFormats.UPC_E,
+          // Code 128 / 39 / ITF
+          (await import("html5-qrcode")).Html5QrcodeSupportedFormats.CODE_128,
+          (await import("html5-qrcode")).Html5QrcodeSupportedFormats.CODE_39,
+          (await import("html5-qrcode")).Html5QrcodeSupportedFormats.ITF,
+        ],
+        rememberLastUsedCamera: true,
+        disableFlip: facingMode === "environment",
       } as any;
 
       const onSuccess = async (decodedText: string) => {
@@ -233,9 +249,10 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
 
   return (
     <div className={`relative text-gray-900 ${className ?? ""}`}>
-      <div className="fixed inset-0 bg-gradient-to-br from-emerald-50 to-teal-50" />
-      <div className="relative z-10 flex min-h-[100svh] w-full items-center justify-center p-4 pt-[env(safe-area-inset-top)] pb-[calc(4.5rem+env(safe-area-inset-bottom))]">
-        <div className="relative w-full h-[100svh] sm:h-auto sm:max-w-[500px] sm:aspect-[3/4] rounded-none sm:rounded-3xl overflow-hidden shadow-none sm:shadow-2xl">
+      <div className="fixed inset-0 bg-black" />
+      {/* Full-screen scanner surface on mobile; centers nicely on desktop */}
+      <div className="fixed inset-0 z-10 sm:relative sm:z-auto sm:flex sm:min-h-[100svh] sm:items-center sm:justify-center">
+        <div className="relative w-full h-full sm:h-auto sm:max-w-[500px] sm:aspect-[3/4] overflow-hidden">
           {/* Camera feed mount */}
           <div ref={containerRef} className="absolute inset-0 bg-black">
             {status === "loading" && (
@@ -307,7 +324,7 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
                   {/* Animated gradient border */}
                   <div className="absolute inset-0 rounded-2xl p-[2px]">
                     <div className="absolute inset-0 rounded-2xl scanner-border" />
-                    <div className="absolute inset-[2px] rounded-2xl bg-black/40" />
+                    <div className="absolute inset-[2px] rounded-2xl bg-black/35" />
                   </div>
                   {/* Corner brackets */}
                   <div className="absolute inset-0">
@@ -390,6 +407,12 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
           0% { opacity: 0.95; transform: scale(0.9); }
           100% { opacity: 0; transform: scale(1.25); }
         }
+      `}</style>
+      {/* Force html5-qrcode injected video/canvas to cover the surface */}
+      <style jsx global>{`
+        #${scannerId}, #${scannerId} * { box-sizing: border-box; }
+        #${scannerId} video { position: absolute !important; inset: 0; width: 100% !important; height: 100% !important; object-fit: cover; transform: none !important; }
+        #${scannerId} canvas { position: absolute !important; inset: 0; width: 100% !important; height: 100% !important; object-fit: cover; }
       `}</style>
     </div>
   );
