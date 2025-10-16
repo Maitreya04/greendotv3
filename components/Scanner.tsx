@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useId, useRef, useState } from "react";
+import { CameraPulseIcon } from "@/components/Skeleton";
 import dynamic from "next/dynamic";
 
 type ScannerProps = {
@@ -233,12 +234,13 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
   return (
     <div className={`relative text-gray-900 ${className ?? ""}`}>
       <div className="fixed inset-0 bg-gradient-to-br from-emerald-50 to-teal-50" />
-      <div className="relative z-10 flex min-h-screen w-screen items-center justify-center p-4">
-        <div className="relative w-full max-w-md aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl">
+      <div className="relative z-10 flex min-h-[100svh] w-full items-center justify-center p-4 pt-[env(safe-area-inset-top)] pb-[calc(4.5rem+env(safe-area-inset-bottom))]">
+        <div className="relative w-full h-[100svh] sm:h-auto sm:max-w-[500px] sm:aspect-[3/4] rounded-none sm:rounded-3xl overflow-hidden shadow-none sm:shadow-2xl">
           {/* Camera feed mount */}
           <div ref={containerRef} className="absolute inset-0 bg-black">
             {status === "loading" && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
+                <CameraPulseIcon />
                 <div className="animate-pulse text-sm text-gray-300">Initializing camera...</div>
               </div>
             )}
@@ -266,7 +268,7 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
                   setFacingMode((m) => (m === "environment" ? "user" : "environment"));
                   void startScanner();
                 }}
-                className="absolute right-3 top-3 z-20 rounded-full bg-white/95 px-3 py-1 text-xs font-medium text-emerald-700 shadow backdrop-blur hover:bg-white"
+                className="absolute right-3 top-[calc(0.75rem+env(safe-area-inset-top))] sm:top-3 z-20 rounded-full bg-white/95 px-3 py-1 text-xs font-medium text-emerald-700 shadow backdrop-blur hover:bg-white"
               >
                 Flip
               </button>
@@ -318,9 +320,9 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
               </div>
             )}
 
-            {/* Searching status */}
+            {/* Searching status (safe-area aware) */}
             {status === "scanning" && (
-              <div className="absolute left-1/2 -translate-x-1/2 bottom-6 text-center text-sm text-white/90">
+              <div className="absolute left-1/2 -translate-x-1/2 bottom-[calc(1.5rem+env(safe-area-inset-bottom))] sm:bottom-6 text-center text-sm text-white/90">
                 <span className="inline-block animate-search-fade">Searching for barcode...</span>
               </div>
             )}

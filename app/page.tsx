@@ -1,13 +1,17 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import Scanner from "@/components/Scanner";
 import ResultCard from "@/components/ResultCard";
+import { ResultSkeletonCard } from "@/components/Skeleton";
+import dynamic from "next/dynamic";
 import { fetchProduct, type ProductResult as OffProductResult } from "@/lib/offApi";
 import { analyzeIngredients, normalizeIngredients, type AnalysisResult } from "@/lib/analyze";
 import type { DietMode, ProductResult as TypesProductResult } from "@/types";
 
 type ViewState = "scanner" | "result" | "error";
+
+const Scanner = dynamic(() => import("@/components/Scanner"), { ssr: false });
+const PhotoUpload = dynamic(() => import("@/components/PhotoUpload"), { ssr: false });
 
 export default function Home() {
   const [scanning, setScanning] = useState<boolean>(true);
@@ -17,6 +21,7 @@ export default function Home() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [dietMode, setDietMode] = useState<DietMode>("vegetarian");
+  const [uploaderOpen, setUploaderOpen] = useState<boolean>(false);
 
   const view: ViewState = useMemo(() => {
     if (loading) return "result"; // show skeleton in result view while loading
@@ -98,6 +103,7 @@ export default function Home() {
     setAnalysis(null);
     setError(null);
     setLoading(false);
+    setUploaderOpen(false);
   }, []);
 
   const uiResult = useMemo<TypesProductResult | null>(() => {
@@ -126,8 +132,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen w-full bg-gray-50 text-gray-900">
-      <div className="mx-auto max-w-2xl px-4 py-4">
-        <header className="mb-4 flex items-center justify-between gap-3">
+      <div className="mx-auto w-full px-4 py-4 sm:max-w-[600px] lg:max-w-[800px]">
+        <header className={"mb-4 items-center justify-between gap-3 " + (view === "scanner" ? "hidden sm:flex" : "flex")}>
           <h1 className="text-lg font-semibold">Greendot</h1>
           <DietSelector
             value={dietMode}
@@ -141,15 +147,27 @@ export default function Home() {
             <p className="mt-3 text-center text-sm text-gray-600">
               Point the camera at a barcode to scan.
             </p>
+            <div className="mt-4 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setUploaderOpen(true)}
+                className="inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-gray-900 ring-1 ring-gray-300 hover:bg-gray-100 active:bg-gray-200"
+              >
+                <span className="text-lg" aria-hidden>🖼️</span>
+                <span className="text-sm font-medium">Can't scan? Upload photo</span>
+              </button>
+            </div>
           </section>
         )}
 
         {view === "result" && (
           <section>
-            {loading && <ResultSkeleton />}
-            {!loading && uiResult && (
-              <ResultCard result={uiResult} onScanAnother={resetAll} dietMode={dietMode} />
-            )}
+            <div className="mx-auto w-full sm:max-w-[600px]">
+              {loading && <ResultSkeletonCard />}
+              {!loading && uiResult && (
+                <ResultCard result={uiResult} onScanAnother={resetAll} dietMode={dietMode} />
+              )}
+            </div>
             <div className="mt-4 flex items-center justify-between gap-3">
               <button
                 type="button"
@@ -176,6 +194,13 @@ export default function Home() {
             <ErrorCard message={error ?? "Something went wrong."} onRetry={retryFetch} onReset={resetAll} />
           </section>
         )}
+
+        {/* Uploader overlay */}
+        <PhotoUpload
+          open={uploaderOpen}
+          onClose={() => setUploaderOpen(false)}
+          dietMode={dietMode}
+        />
       </div>
     </div>
   );
@@ -205,23 +230,6 @@ function DietSelector({ value, onChange }: { value: DietMode; onChange: (m: Diet
           </button>
         );
       })}
-    </div>
-  );
-}
-
-function ResultSkeleton() {
-  return (
-    <div className="animate-pulse rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <div className="mb-3 flex items-center justify-between">
-        <div className="h-5 w-48 rounded bg-gray-200" />
-        <div className="h-6 w-32 rounded-full bg-gray-200" />
-      </div>
-      <div className="mb-3 h-40 w-full rounded bg-gray-200" />
-      <div className="grid gap-3 md:grid-cols-2">
-        <div className="h-20 rounded bg-gray-200" />
-        <div className="h-20 rounded bg-gray-200" />
-      </div>
-      <div className="mt-4 h-24 rounded bg-gray-200" />
     </div>
   );
 }

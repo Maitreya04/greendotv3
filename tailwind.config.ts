@@ -80,12 +80,17 @@ const config: Config = {
           "0%, 100%": { boxShadow: "0 0 0 0 rgba(16, 185, 129, 0.7)" },
           "50%": { boxShadow: "0 0 0 10px rgba(16, 185, 129, 0)" },
         },
+        shimmer: {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(100%)" },
+        },
       },
       animation: {
         "fade-in": designAnimations.fadeIn,
         "slide-up": designAnimations.slideUp,
         "scale-in": designAnimations.scaleIn,
         "pulse-success": "pulse-success 1.5s ease-in-out infinite",
+        shimmer: "shimmer 1.8s linear infinite",
       },
     },
   },

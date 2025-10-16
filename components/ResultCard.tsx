@@ -4,6 +4,7 @@ import React from "react";
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ProductResult as VegWiseProductResult, Reason as VegWiseReason } from "@/types";
+import Image from "next/image";
 
 type Props = {
   result: VegWiseProductResult;
@@ -212,14 +213,28 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
       animate="visible"
       whileHover={{ y: -4 }}
       whileTap={{ scale: 0.98 }}
-      className="relative w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-md"
+      className="relative w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-md hover:shadow-lg transition-shadow"
     >
       {/* 1) Product Image Hero */}
       <motion.div variants={itemVariants} className="relative">
         <div className="relative h-56 w-full overflow-hidden rounded-t-2xl bg-gray-100">
           {result.image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={result.image} alt={name} className="h-full w-full object-cover" />
+            isOptimizableHttpUrl(result.image) ? (
+              <Image
+                src={result.image}
+                alt={name}
+                fill
+                priority={false}
+                className="object-cover"
+                placeholder="blur"
+                blurDataURL={BLUR_DATA_URL}
+                sizes="(max-width: 640px) 100vw, 800px"
+              />
+            ) : (
+              // Fallback for blob:/data: or unsupported schemes
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={result.image} alt={name} className="h-full w-full object-cover" />
+            )
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
               <span className="text-sm text-gray-500">No image available</span>
@@ -383,15 +398,15 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
       </motion.div>
 
       {/* 5) Actions */}
-      <div className="pb-20" />
-      <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
-        <div className="pointer-events-auto inline-flex items-center gap-3 rounded-full bg-white/80 p-2 shadow-xl ring-1 ring-gray-200 backdrop-blur">
+      <div className="pb-24" />
+      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] sm:bottom-4 z-40 flex justify-center px-4">
+        <div className="pointer-events-auto inline-flex items-center gap-3 rounded-full bg-white/90 p-2 shadow-xl ring-1 ring-gray-200 backdrop-blur">
           <motion.button
             type="button"
             onClick={onScanAnother}
             whileHover={{ y: -1 }}
             whileTap={{ scale: 0.98 }}
-            className="rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 px-5 py-2 text-sm font-semibold text-white shadow-md"
+            className="rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-md min-h-11"
           >
             Scan Another
           </motion.button>
@@ -401,7 +416,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
             aria-label="Share"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="grid h-9 w-9 place-items-center rounded-full bg-white text-gray-700 ring-1 ring-gray-200 shadow-sm"
+            className="grid h-11 w-11 place-items-center rounded-full bg-white text-gray-700 ring-1 ring-gray-200 shadow-sm"
           >
             <span aria-hidden>📤</span>
           </motion.button>
@@ -410,7 +425,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
             aria-label="History"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="grid h-9 w-9 place-items-center rounded-full bg-white text-gray-700 ring-1 ring-gray-200 shadow-sm"
+            className="grid h-11 w-11 place-items-center rounded-full bg-white text-gray-700 ring-1 ring-gray-200 shadow-sm"
             onClick={() => {
               try {
                 window.dispatchEvent(new CustomEvent("openHistory"));
@@ -430,6 +445,45 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
       </motion.div>
     </motion.div>
   );
+}
+
+// Lightweight shimmer placeholder for Image blurDataURL
+function shimmer(width: number, height: number) {
+  return `
+    <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="g">
+          <stop stop-color="#e5e7eb" offset="20%"/>
+          <stop stop-color="#f3f4f6" offset="50%"/>
+          <stop stop-color="#e5e7eb" offset="70%"/>
+        </linearGradient>
+      </defs>
+      <rect width="${width}" height="${height}" fill="#eee"/>
+      <rect id="r" width="${Math.ceil(width/3)}" height="${height}" fill="url(#g)"/>
+      <animate xlink:href="#r" attributeName="x" from="-${Math.ceil(width/3)}" to="${width}" dur="1.2s" repeatCount="indefinite"  />
+    </svg>`;
+}
+
+function toBase64Safe(s: string): string {
+  try {
+    if (typeof window !== "undefined" && typeof window.btoa === "function") return window.btoa(s);
+  } catch {}
+  try {
+    const g: any = globalThis as any;
+    if (g && g.Buffer) return g.Buffer.from(s).toString("base64");
+  } catch {}
+  return s;
+}
+
+const BLUR_DATA_URL = `data:image/svg+xml;base64,${toBase64Safe(shimmer(1200, 448))}`;
+
+function isOptimizableHttpUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 

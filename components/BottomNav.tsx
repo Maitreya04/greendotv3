@@ -7,7 +7,7 @@ import { useCallback, useMemo } from "react";
 type NavItem = {
   label: string;
   href: string;
-  icon: (props: { className?: string }) => JSX.Element;
+  icon: (props: { className?: string }) => React.ReactElement;
 };
 
 function HomeIcon({ className }: { className?: string }) {
@@ -99,7 +99,7 @@ export default function BottomNav() {
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       aria-label="Bottom Navigation"
     >
-      <ul className="mx-auto flex max-w-md items-center justify-around px-6 py-2">
+      <ul className="mx-auto flex max-w-md items-center justify-around px-4 py-2">
         {items.map(({ label, href, icon: Icon }) => {
           const isActive = pathname === href || (href !== "/" && pathname?.startsWith(href));
           const baseColor = isActive ? "text-emerald-600" : "text-gray-400";
@@ -109,7 +109,7 @@ export default function BottomNav() {
               <Link
                 href={href}
                 aria-label={label}
-                className={`${baseColor} ${hoverColor} group flex flex-col items-center gap-1 py-2 transition-colors duration-200`}
+                className={`${baseColor} ${hoverColor} group flex flex-col items-center gap-1 rounded-full px-3 py-3 min-h-11 transition-colors duration-200 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40`}
                 onClick={(e) => {
                   // Only vibrate when changing to a different tab
                   if (!isActive) {
