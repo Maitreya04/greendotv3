@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ProductResult as VegWiseProductResult, Reason as VegWiseReason } from "@/types";
 
@@ -67,8 +67,19 @@ const ALLERGEN_ICON: Record<string, string> = {
 };
 
 const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
+  hidden: { opacity: 0, y: 24 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      duration: 0.5,
+      stiffness: 240,
+      damping: 24,
+      staggerChildren: 0.08,
+      when: "beforeChildren",
+    },
+  },
 };
 
 const itemVariants = {
@@ -107,6 +118,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
   const verdict = result.analysis.verdict;
   const confidence = result.analysis.confidence ?? 0;
   const meta = verdictMeta(verdict);
+  const confettiFiredRef = useRef(false);
 
   const reasons = (result as any).reasons ?? result.analysis.reasons ?? [];
   const [expanded, setExpanded] = useState(false);
@@ -165,11 +177,41 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
 
   const progressWidth = `${Math.max(0, Math.min(100, confidence))}%`;
 
+  // Trigger a subtle confetti burst when verdict is 'yes'
+  useEffect(() => {
+    if (verdict !== "yes") return;
+    if (confettiFiredRef.current) return;
+    confettiFiredRef.current = true;
+    let cancelled = false;
+    (async () => {
+      try {
+        const mod = await import("canvas-confetti");
+        if (cancelled) return;
+        const confetti = mod.default || (mod as any);
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          startVelocity: 38,
+          gravity: 1.1,
+          ticks: 120,
+          scalar: 0.8,
+          origin: { y: 0.2 },
+        });
+      } catch {}
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [verdict]);
+
   return (
     <motion.div
+      layout
       variants={containerVariants}
       initial="hidden"
       animate="visible"
+      whileHover={{ y: -4 }}
+      whileTap={{ scale: 0.98 }}
       className="relative w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-md"
     >
       {/* 1) Product Image Hero */}
@@ -192,12 +234,17 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
           </div>
 
           {/* Floating verdict badge */}
-          <div className="absolute right-4 top-4">
+          <motion.div
+            className="absolute right-4 top-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 260, damping: 22, delay: 0.1 }}
+          >
             <div className={`flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium ${meta.bg} ${meta.fg} ring-1 ${meta.ring} shadow-md backdrop-blur-sm`}>
               <span className="text-xl" aria-hidden>{meta.emoji}</span>
               <span className="hidden sm:block">{meta.text}</span>
             </div>
-          </div>
+          </motion.div>
         </div>
       </motion.div>
 
@@ -235,7 +282,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
               initial={{ height: 96, opacity: 1 }}
               animate={{ height: expanded ? "auto" : 96 }}
               exit={{ height: 96 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ type: "spring", stiffness: 220, damping: 26 }}
               className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-800"
             >
               <div className="whitespace-pre-wrap leading-relaxed">
@@ -257,7 +304,12 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
         </div>
 
         {Array.isArray(reasons) && reasons.length > 0 ? (
-          <ul className="mt-3 grid gap-1 text-sm text-gray-700">
+          <motion.ul
+            className="mt-3 grid gap-1 text-sm text-gray-700"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 240, damping: 22, delay: 0.2 }}
+          >
             {(reasons as VegWiseReason[]).map((r, idx) => (
               <li key={idx} className="flex items-center gap-2">
                 <span className={`h-2 w-2 shrink-0 rounded-full ${r.severity === "blocking" ? "bg-rose-500" : "bg-amber-500"}`}></span>
@@ -266,14 +318,18 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
                 </span>
               </li>
             ))}
-          </ul>
+          </motion.ul>
         ) : (
           <div className="mt-2 text-sm text-gray-600">No specific issues detected.</div>
         )}
       </motion.div>
 
       {/* 4) Info Cards Grid */}
-      <motion.div variants={itemVariants} className="px-4 pt-4">
+      <motion.div
+        variants={itemVariants}
+        className="px-4 pt-4"
+        transition={{ type: "spring", stiffness: 240, damping: 22, delay: 0.3 }}
+      >
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {/* Allergens card */}
           <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200">
