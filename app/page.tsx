@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { fetchProduct, type ProductResult as OffProductResult } from "@/lib/offApi";
 import { analyzeIngredients, normalizeIngredients, type AnalysisResult } from "@/lib/analyze";
 import type { DietMode, ProductResult as TypesProductResult } from "@/types";
+import Onboarding from "@/components/Onboarding";
 
 type ViewState = "scanner" | "result" | "error";
 
@@ -22,6 +23,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [dietMode, setDietMode] = useState<DietMode>("vegetarian");
   const [uploaderOpen, setUploaderOpen] = useState<boolean>(false);
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
 
   const view: ViewState = useMemo(() => {
     if (loading) return "result"; // show skeleton in result view while loading
@@ -29,6 +31,31 @@ export default function Home() {
     if (product) return "result";
     return "scanner";
   }, [loading, error, product]);
+  // Onboarding gate
+  useEffect(() => {
+    try {
+      const done = typeof window !== "undefined" ? localStorage.getItem("greendot.onboarding.done") : null;
+      if (!done) setShowOnboarding(true);
+      // If preferences exist, hydrate default diet
+      const raw = typeof window !== "undefined" ? localStorage.getItem("greendot.onboarding") : null;
+      if (raw) {
+        const parsed = JSON.parse(raw) as { diets?: DietMode[] };
+        if (parsed?.diets && parsed.diets.length > 0) {
+          const preferred = (parsed.diets[0] ?? "vegetarian") as DietMode;
+          setDietMode(preferred);
+        }
+      }
+    } catch {}
+  }, []);
+
+  const handleOnboardingComplete = useCallback((prefs?: { diets?: DietMode[] }) => {
+    try { if (typeof window !== "undefined") localStorage.setItem("greendot.onboarding.done", "1"); } catch {}
+    if (prefs?.diets && prefs.diets.length > 0) {
+      setDietMode(prefs.diets[0] as DietMode);
+    }
+    setShowOnboarding(false);
+  }, []);
+
 
   const doAnalyze = useCallback(
     (ingredientsText: string | null, mode: DietMode) => {
@@ -132,6 +159,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen w-full bg-gray-50 text-gray-900">
+      {showOnboarding && (
+        <div className="fixed inset-0 z-50 bg-white">
+          <Onboarding onComplete={handleOnboardingComplete} />
+        </div>
+      )}
       <div className="mx-auto w-full px-4 py-4 sm:max-w-[600px] lg:max-w-[800px]">
         <header className={"mb-4 items-center justify-between gap-3 " + (view === "scanner" ? "hidden sm:flex" : "flex")}>
           <h1 className="text-lg font-semibold">Greendot</h1>
