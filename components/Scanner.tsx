@@ -18,6 +18,7 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
   const [canFlip, setCanFlip] = useState<boolean>(false);
   const currentDeviceIdRef = useRef<string | null>(null);
   const [showInstructions, setShowInstructions] = useState<boolean>(true);
+  const [tapPoint, setTapPoint] = useState<{ x: number; y: number } | null>(null);
 
   // Keep scanner box size in sync with html5-qrcode qrbox
   const SCAN_BOX = { width: 280, height: 140 } as const;
@@ -127,6 +128,86 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
     }
   };
 
+  const attemptTapToFocus = async (poi?: { nx: number; ny: number }) => {
+    try {
+      const mount = containerRef.current;
+      if (!mount) return;
+      const video = mount.querySelector("video") as HTMLVideoElement | null;
+      const stream = (video?.srcObject as MediaStream) || null;
+      const track = stream?.getVideoTracks ? stream.getVideoTracks()[0] : null;
+      if (!track) return;
+
+      // Try html5-qrcode helper first if available
+      try {
+        if (html5QrcodeRef.current?.applyVideoConstraints) {
+          const constraintsAny: any = { advanced: [{ focusMode: "single-shot" }] };
+          if (poi) {
+            constraintsAny.advanced.push({ pointsOfInterest: [{ x: poi.nx, y: poi.ny }] });
+          }
+          await html5QrcodeRef.current.applyVideoConstraints(constraintsAny);
+          return;
+        }
+      } catch (_eh) {
+        // fall through to track constraints
+      }
+
+      const caps: any = (track as any).getCapabilities ? (track as any).getCapabilities() : null;
+      const focusModes: string[] | undefined = caps?.focusMode;
+      if (focusModes && focusModes.includes("single-shot")) {
+        const adv: any[] = [{ focusMode: "single-shot" }];
+        if (poi && caps?.pointsOfInterest) {
+          adv.push({ pointsOfInterest: [{ x: poi.nx, y: poi.ny }] });
+        }
+        await (track as any).applyConstraints({ advanced: adv });
+        return;
+      }
+      if (focusModes && (focusModes.includes("continuous") || focusModes.includes("auto"))) {
+        const adv: any[] = [{ focusMode: focusModes.includes("continuous") ? "continuous" : "auto" }];
+        if (poi && caps?.pointsOfInterest) {
+          adv.push({ pointsOfInterest: [{ x: poi.nx, y: poi.ny }] });
+        }
+        await (track as any).applyConstraints({ advanced: adv });
+        return;
+      }
+
+      // Nudge autofocus by briefly toggling frame rate if nothing else is supported
+      try {
+        await track.applyConstraints({ frameRate: { ideal: 30 } });
+      } catch (_e2) {
+        // ignore
+      }
+    } catch (_e) {
+      // ignore focusing errors
+    }
+  };
+
+  const handleTapFromPoint = async (clientX: number, clientY: number, target: HTMLDivElement) => {
+    try {
+      const rect = target.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      setTapPoint({ x, y });
+      setTimeout(() => setTapPoint(null), 900);
+      const nx = Math.min(1, Math.max(0, x / rect.width));
+      const ny = Math.min(1, Math.max(0, y / rect.height));
+      await attemptTapToFocus({ nx, ny });
+      // Subtle haptic to acknowledge tap where supported
+      try {
+        if (typeof navigator !== "undefined" && (navigator as any).vibrate) {
+          (navigator as any).vibrate(10);
+        }
+      } catch (_h) {}
+    } catch (_e) {}
+  };
+  const handleTap = async (e: React.MouseEvent<HTMLDivElement>) => {
+    await handleTapFromPoint(e.clientX, e.clientY, e.currentTarget as HTMLDivElement);
+  };
+  const handleTouch = async (e: React.TouchEvent<HTMLDivElement>) => {
+    const t = e.changedTouches && e.changedTouches[0];
+    if (!t) return;
+    await handleTapFromPoint(t.clientX, t.clientY, e.currentTarget as HTMLDivElement);
+  };
+
   useEffect(() => {
     hasDecodedRef.current = false;
     startScanner();
@@ -180,11 +261,12 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
               <button
                 type="button"
                 aria-label="Flip camera"
-                onClick={() => {
+                onClick={(ev) => {
+                  ev.stopPropagation();
                   setFacingMode((m) => (m === "environment" ? "user" : "environment"));
                   void startScanner();
                 }}
-                className="absolute right-3 top-3 rounded-full bg-white/95 px-3 py-1 text-xs font-medium text-emerald-700 shadow backdrop-blur hover:bg-white"
+                className="absolute right-3 top-3 z-20 rounded-full bg-white/95 px-3 py-1 text-xs font-medium text-emerald-700 shadow backdrop-blur hover:bg-white"
               >
                 Flip
               </button>
@@ -199,6 +281,17 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
                 </svg>
                 <span className="text-sm font-medium">Point camera at barcode</span>
               </div>
+            )}
+
+            {/* Tap overlay for focus */}
+            {status === "scanning" && (
+              <div
+                className="absolute inset-0 z-10"
+                role="button"
+                aria-label="Tap to focus"
+                onClick={handleTap}
+                onTouchEnd={handleTouch}
+              />
             )}
 
             {/* Premium scanner overlay */}
@@ -229,6 +322,18 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
             {status === "scanning" && (
               <div className="absolute left-1/2 -translate-x-1/2 bottom-6 text-center text-sm text-white/90">
                 <span className="inline-block animate-search-fade">Searching for barcode...</span>
+              </div>
+            )}
+
+            {/* Tap focus reticle */}
+            {tapPoint && (
+              <div
+                className="pointer-events-none absolute z-20 h-10 w-10 -translate-x-1/2 -translate-y-1/2"
+                style={{ left: tapPoint.x, top: tapPoint.y }}
+                aria-hidden
+              >
+                <div className="absolute inset-0 rounded-full ring-2 ring-emerald-300/90 animate-reticle" />
+                <div className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-400/90" />
               </div>
             )}
 
@@ -275,6 +380,13 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
         @keyframes search-fade {
           0% { opacity: 0.45; }
           100% { opacity: 1; }
+        }
+        .animate-reticle {
+          animation: reticle-ping 0.9s ease-out 1;
+        }
+        @keyframes reticle-ping {
+          0% { opacity: 0.95; transform: scale(0.9); }
+          100% { opacity: 0; transform: scale(1.25); }
         }
       `}</style>
     </div>
