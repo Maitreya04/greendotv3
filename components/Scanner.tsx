@@ -21,8 +21,10 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
   const [showInstructions, setShowInstructions] = useState<boolean>(true);
   const [tapPoint, setTapPoint] = useState<{ x: number; y: number } | null>(null);
 
-  // Horizontal scan box tuned for 1D barcodes
-  const SCAN_BOX = { width: 320, height: 120 } as const;
+  // Horizontal scan box tuned for 1D barcodes (responsive, updated via state)
+  const [scanBox, setScanBox] = useState<{ width: number; height: number }>({ width: 320, height: 120 });
+  const SCAN_BOX = scanBox;
+  const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
   const stopScanner = async () => {
     try {
@@ -90,7 +92,13 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
       }
       const config = {
         fps: 24,
-        qrbox: { width: SCAN_BOX.width, height: SCAN_BOX.height },
+        // Make the detection area large and responsive for easy framing
+        qrbox: (vfWidth: number, _vfHeight: number) => {
+          const w = Math.round(clamp(vfWidth * 0.92, 320, Math.min(900, vfWidth)));
+          const h = Math.round(clamp(w * 0.22, 110, 200));
+          try { setScanBox({ width: w, height: h }); } catch {}
+          return { width: w, height: h } as any;
+        },
         aspectRatio: 1.7777778,
         // Prefer BarcodeDetector API for 1D barcodes when supported (much faster on mobile)
         experimentalFeatures: { useBarCodeDetectorIfSupported: true },
@@ -107,6 +115,14 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
           (await import("html5-qrcode")).Html5QrcodeSupportedFormats.ITF,
         ],
         rememberLastUsedCamera: true,
+        // Favor a fast 720p stream for lower decode latency
+        videoConstraints: {
+          facingMode,
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          focusMode: "continuous" as any,
+          advanced: [{ focusMode: "continuous" as any }],
+        },
         disableFlip: facingMode === "environment",
       } as any;
 
@@ -138,6 +154,8 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
       };
 
       await html5QrcodeRef.current.start(startConfig, config, onSuccess, onError);
+      // Immediately enable continuous autofocus if supported to reduce time-to-read
+      try { await attemptTapToFocus(); } catch {}
       setStatus("scanning");
     } catch (_e) {
       await stopScanner();
@@ -232,6 +250,25 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className }) => {
       void stopScanner();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Keep overlay sized to container; react to rotations/resizes
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const update = () => {
+      const w = el.clientWidth || 320;
+      const newW = Math.round(clamp(w * 0.92, 320, Math.min(900, w)));
+      const newH = Math.round(clamp(newW * 0.22, 110, 200));
+      setScanBox({ width: newW, height: newH });
+    };
+    update();
+    let ro: ResizeObserver | null = null;
+    try {
+      ro = new ResizeObserver(() => update());
+      ro.observe(el);
+    } catch {}
+    return () => { try { ro && ro.disconnect(); } catch {} };
   }, []);
 
   // Auto-dismiss instructions shortly after scanning starts
