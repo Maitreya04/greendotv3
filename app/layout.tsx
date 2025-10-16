@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
+import PageTransition from "@/components/PageTransition";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,7 +34,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} ${inter.variable}`}>
         <div style={{ paddingBottom: "calc(4.5rem + env(safe-area-inset-bottom))" }}>
-          {children}
+          <PageTransition>
+            {children}
+          </PageTransition>
         </div>
         <BottomNav />
       </body>
