@@ -164,7 +164,9 @@ export default function PhotoUpload({ open, onClose, dietMode }: Props) {
         input = imageUrl as string;
       }
       const { createWorker } = await import("tesseract.js");
-      const worker = await createWorker("eng", 1, {
+      // Load multiple languages for international products, with English for final analysis
+      const langs = "eng+chi_sim+chi_tra+jpn+kor+rus+ara+heb+fra+deu+spa+ita+por";
+      const worker = await createWorker(langs, 1, {
         logger: (m: any) => {
           if (m.status && typeof m.progress === "number") {
             setProgress(Math.max(0, Math.min(1, m.progress)));
@@ -172,9 +174,16 @@ export default function PhotoUpload({ open, onClose, dietMode }: Props) {
         },
       } as any);
       const { data } = await worker.recognize(input as any);
-      const text = (data?.text || "").trim();
+      const raw = (data?.text || "").trim();
       try { await worker.terminate(); } catch {}
-      setOcrText(text);
+      setOcrText(raw);
+      // Translate OCR to English for consistent rules
+      const { translateText } = await import("@/lib/translate");
+      let text = raw;
+      try {
+        const tr = await translateText(raw, "EN");
+        text = tr.text || raw;
+      } catch {}
       const analysis = analyzeIngredients(text, dietMode);
       const now = new Date().toISOString();
       const product: TypesProductResult = {

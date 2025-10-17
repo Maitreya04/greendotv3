@@ -169,4 +169,86 @@ export async function fetchProduct(barcode: string): Promise<ProductResult | nul
   return null;
 }
 
+// Helper to pick a localized field from OFF (e.g., ingredients_text_en, ingredients_text_fr)
+type AnyOff = Record<string, any>;
+function pickLangField<T extends AnyOff>(obj: T, base: string, preferred?: string) {
+  const tries: string[] = [];
+  if (preferred) {
+    const lc = preferred.toLowerCase();
+    tries.push(lc);
+    const short = lc.split("-")[0];
+    if (short && short !== lc) tries.push(short);
+  }
+  tries.push("en");
+  for (const t of tries) {
+    const key = `${base}_${t}`;
+    const val = obj?.[key];
+    if (typeof val === "string" && val.trim()) return { value: val.trim(), lang: t };
+  }
+  const fallback = obj?.[base];
+  return { value: typeof fallback === "string" ? fallback.trim() : null, lang: null };
+}
+
+export async function fetchProductLocalized(
+  barcode: string,
+  preferredLang?: string,
+  translateTo: string = "EN"
+): Promise<(ProductResult & { ingredientsOriginal?: string | null; ingredientsLang?: string | null }) | null> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const url = `${OFF_ENDPOINT_V2}/${encodeURIComponent(barcode)}`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "User-Agent": USER_AGENT,
+        Accept: "application/json",
+        ...(preferredLang ? { "Accept-Language": preferredLang } : {}),
+      },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    if (!response.ok) return null;
+    const data = (await response.json()) as { status?: number; product?: AnyOff };
+    if (!data || data.status !== 1 || !data.product) return null;
+
+    const p = data.product as AnyOff;
+    const picked = pickLangField(p, "ingredients_text", preferredLang);
+    const namePicked = pickLangField(p, "product_name", preferredLang);
+
+    let ingredientsText: string | null = picked.value ?? null;
+    const nameText: string | null = namePicked.value ?? (p.product_name?.trim() || null);
+
+    // Translate to target language for consistent analysis
+    const needTranslate = !!ingredientsText && translateTo.toLowerCase() !== (picked.lang ?? "").toLowerCase();
+    if (needTranslate) {
+      try {
+        const { translateText } = await import("./translate");
+        const tr = await translateText(ingredientsText!, translateTo);
+        ingredientsText = tr.text || ingredientsText;
+      } catch {
+        // swallow translation errors; keep original
+      }
+    }
+
+    return {
+      barcode,
+      name: nameText,
+      brands: p.brands?.trim() || null,
+      ingredientsText,
+      allergens: Array.isArray(p.allergens_tags) ? (p.allergens_tags as string[]) : [],
+      energyKcalPer100g: Number.isFinite(+p?.nutriments?.["energy-kcal_100g"]) ? +p.nutriments["energy-kcal_100g"] : null,
+      sugarsPer100g: Number.isFinite(+p?.nutriments?.["sugars_100g"]) ? +p.nutriments["sugars_100g"] : null,
+      proteinsPer100g: Number.isFinite(+p?.nutriments?.["proteins_100g"]) ? +p.nutriments["proteins_100g"] : null,
+      servingSize: p.serving_size?.trim() || null,
+      imageUrl: p.image_url?.trim() || null,
+      ingredientsOriginal: picked.value ?? null,
+      ingredientsLang: picked.lang ?? null,
+    };
+  } catch {
+    clearTimeout(timeoutId);
+    return null;
+  }
+}
+
 

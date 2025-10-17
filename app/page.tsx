@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ResultCard from "@/components/ResultCard";
 import dynamic from "next/dynamic";
-import { fetchProduct, type ProductResult as OffProductResult } from "@/lib/offApi";
+import { fetchProductLocalized, type ProductResult as OffProductResult } from "@/lib/offApi";
 import { analyzeIngredients, normalizeIngredients, type AnalysisResult } from "@/lib/analyze";
 import type { DietMode, ProductResult as TypesProductResult } from "@/types";
 import Onboarding from "@/components/Onboarding";
@@ -94,7 +94,8 @@ export default function Home() {
     setProduct(null);
     setAnalysis(null);
     try {
-      const p = await fetchProduct(code);
+      const lang = typeof navigator !== "undefined" && (navigator as any)?.language ? (navigator as any).language : "en-US";
+      const p = await fetchProductLocalized(code, lang, "EN");
       if (!p) {
         const offline = typeof navigator !== "undefined" && navigator && "onLine" in navigator ? !navigator.onLine : false;
         setError(offline ? "Network error. Check connection and retry." : "Product not found. Try another product or upload photo.");
@@ -114,7 +115,8 @@ export default function Home() {
     setError(null);
     setLoading(true);
     try {
-      const p = await fetchProduct(barcode);
+      const lang = typeof navigator !== "undefined" && (navigator as any)?.language ? (navigator as any).language : "en-US";
+      const p = await fetchProductLocalized(barcode, lang, "EN");
       if (!p) {
         const offline = typeof navigator !== "undefined" && navigator && "onLine" in navigator ? !navigator.onLine : false;
         setError(offline ? "Network error. Check connection and retry." : "Product not found. Try another product or upload photo.");
