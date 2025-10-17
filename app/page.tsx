@@ -240,7 +240,7 @@ export default function Home() {
 
       {/* Result overlay */}
       {!showOnboarding && view === "result" && uiResult && (
-        <ResultCard result={uiResult} onScanAnother={resetAll} dietMode={dietMode} />
+        <ResultCard result={uiResult} onScanAnother={resetAll} dietMode={dietMode} onChangeDietMode={setDietMode} />
       )}
 
       {/* Uploader overlay */}

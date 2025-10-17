@@ -5,6 +5,11 @@ import { useMemo, useState, useCallback, useEffect, useRef, useId } from "react"
 import { motion, AnimatePresence } from "framer-motion";
 import type { ProductResult as VegWiseProductResult, Reason as VegWiseReason } from "@/types";
 import Image from "next/image";
+import { analyzeIngredients } from "@/lib/analyze";
+import SectionCard from "@/components/ui/SectionCard";
+import StatusRow from "@/components/ui/StatusRow";
+import { DietTag, TagState } from "@/components/ui/DietTag";
+import { Leaf, Sprout, Wheat, Milk, Hand, ShieldAlert, HeartPulse } from "lucide-react";
 
 type Props = {
   result: VegWiseProductResult;
@@ -384,6 +389,9 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
           </div>
         </motion.div>
 
+        {/* 2.5) DIET STATUS LIST */}
+        <DietStatusList result={result} />
+
         {/* 3) DETAILED ANALYSIS */}
         <motion.div variants={itemVariants} className="px-4 pt-4">
           {verdict !== "yes" && Array.isArray(reasons) && reasons.length > 0 && (
@@ -616,6 +624,73 @@ function isOptimizableHttpUrl(url: string): boolean {
   } catch {
     return false;
   }
+}
+
+// --- Diet status helpers & list ---
+type TagKey = "Vegan" | "Vegetarian" | "Gluten-Free" | "Lactose-Free" | "Jain" | "Allergen" | "Healthy";
+
+function verdictToState(v: "yes" | "no" | "unsure"): TagState {
+  if (v === "yes") return "pass";
+  if (v === "no") return "fail";
+  return "unknown";
+}
+
+function computeGlutenState(tokens: string[], allergens: string[]): TagState {
+  const has = (s: string) => tokens.includes(s) || allergens.includes(s);
+  if (has("gluten") || has("wheat") || has("barley") || has("rye") || has("oats")) return "fail";
+  if (tokens.length === 0) return "unknown";
+  return "pass";
+}
+
+function computeLactoseState(tokens: string[], allergens: string[], reasons: VegWiseReason[]): TagState {
+  const has = (s: string) => tokens.includes(s) || allergens.includes(s);
+  if (has("milk") || has("lactose") || reasons.some((r) => r.category === "dairy")) return "fail";
+  if (tokens.length === 0) return "unknown";
+  return "pass";
+}
+
+function computeHealthyState(nutrition: { calories?: number; sugars?: number } | undefined): TagState {
+  if (!nutrition) return "unknown";
+  const calories = nutrition.calories ?? 0;
+  const sugars = nutrition.sugars ?? 0;
+  if (calories <= 150 && sugars <= 10) return "pass";
+  if (calories > 250 || sugars > 20) return "fail";
+  return "unknown";
+}
+
+function DietStatusList({ result }: { result: VegWiseProductResult }) {
+  const tokens = (result.ingredientsNormalized ?? []).map((t) => t.toLowerCase());
+  const allergens = (result.allergens ?? []).map((a) => String(a).toLowerCase().replace(/^en:/, ""));
+
+  const vegan = analyzeIngredients(result.ingredientsText ?? "", "vegan");
+  const vegetarian = analyzeIngredients(result.ingredientsText ?? "", "vegetarian");
+  const jain = analyzeIngredients(result.ingredientsText ?? "", "jain");
+
+  const tagStates: Record<TagKey, TagState> = {
+    "Vegan": verdictToState(vegan.verdict),
+    "Vegetarian": verdictToState(vegetarian.verdict),
+    "Gluten-Free": computeGlutenState(tokens, allergens),
+    "Lactose-Free": computeLactoseState(tokens, allergens, (result.analysis.reasons ?? []) as VegWiseReason[]),
+    "Jain": verdictToState(jain.verdict),
+    "Allergen": allergens.length > 0 ? "fail" : tokens.length === 0 ? "unknown" : "pass",
+    "Healthy": computeHealthyState(result.nutrition),
+  };
+
+  return (
+    <div className="px-4 pt-4">
+      <SectionCard title="Diet overview" subtitle="Quick checks across common preferences">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <DietTag icon={<Leaf size={16} />} label="Vegan" state={tagStates["Vegan"]} subtle />
+          <DietTag icon={<Sprout size={16} />} label="Vegetarian" state={tagStates["Vegetarian"]} subtle />
+          <DietTag icon={<Wheat size={16} />} label="Gluten-Free" state={tagStates["Gluten-Free"]} subtle />
+          <DietTag icon={<Milk size={16} />} label="Lactose-Free" state={tagStates["Lactose-Free"]} subtle />
+          <DietTag icon={<Hand size={16} />} label="Jain" state={tagStates["Jain"]} subtle />
+          <DietTag icon={<ShieldAlert size={16} />} label="Allergen" state={tagStates["Allergen"]} subtle />
+          <DietTag icon={<HeartPulse size={16} />} label="Healthy" state={tagStates["Healthy"]} subtle />
+        </div>
+      </SectionCard>
+    </div>
+  );
 }
 
 // Chip styles by category
