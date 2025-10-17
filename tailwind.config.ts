@@ -10,8 +10,9 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: dsTypography.fontFamily.sans,
-        mono: dsTypography.fontFamily.mono,
+        // Bind Tailwind utilities to next/font CSS variables for premium control
+        sans: ["var(--font-inter)", ...dsTypography.fontFamily.sans],
+        mono: ["var(--font-jetbrains-mono)", ...dsTypography.fontFamily.mono],
       },
       fontSize: {
         xs: dsTypography.fontSize.xs,

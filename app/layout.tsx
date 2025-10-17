@@ -1,22 +1,24 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 import PageTransition from "@/components/PageTransition";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import Link from "next/link";
+import Image from "next/image";
+import { Settings as SettingsIcon } from "lucide-react";
 
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  axes: ["opsz"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -32,11 +34,24 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} ${inter.variable}`}>
-        <div className="page-content" style={{ paddingBottom: "calc(4.5rem + max(16px, env(safe-area-inset-bottom)))" }}>
-          <PageTransition>
-            {children}
-          </PageTransition>
+      <body className={`${inter.variable} ${jetbrainsMono.variable}`}>
+        {/* Global Top Header */}
+        <div className="fixed top-0 left-0 right-0 z-30 pt-[max(0px,env(safe-area-inset-top))]">
+          <div className="mx-4 md:mx-auto md:max-w-[900px] mt-3 h-16 rounded-2xl bg-white/80 text-stone-900 shadow-sm backdrop-blur-xl ring-1 ring-black/5 flex items-center justify-between px-4">
+            <Link href="/" aria-label="Home" className="flex items-center select-none">
+              <Image src="/greendot.png" alt="Greendot" width={120} height={28} priority style={{ height: "28px", width: "auto" }} />
+            </Link>
+            <Link href="/settings" aria-label="Settings" className="grid h-9 w-9 place-items-center rounded-xl text-emerald-700 hover:bg-emerald-50 ring-1 ring-emerald-200">
+              <SettingsIcon size={18} />
+            </Link>
+          </div>
+        </div>
+        <div className="page-content" style={{ paddingBottom: "calc(4.5rem + max(16px, env(safe-area-inset-bottom)))", paddingTop: "calc(5.25rem + max(16px, env(safe-area-inset-top)))" }}>
+          <div className="w-full px-4 sm:px-8 lg:px-0 sm:max-w-2xl lg:max-w-4xl mx-auto">
+            <PageTransition>
+              {children}
+            </PageTransition>
+          </div>
         </div>
         <BottomNav />
       </body>

@@ -388,7 +388,7 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className, hideOv
                 <button
                   type="button"
                   onClick={retry}
-                  className="px-4 py-2 rounded-md bg-white text-black hover:bg-gray-200 active:bg-gray-300"
+                  className="px-4 py-2 rounded-md bg-white text-stone-900 hover:bg-gray-200 active:bg-gray-300 font-medium"
                 >
                   Retry
                 </button>
@@ -405,7 +405,7 @@ const ScannerInner: React.FC<ScannerProps> = ({ onScanSuccess, className, hideOv
                   setFacingMode((m) => (m === "environment" ? "user" : "environment"));
                   void startScanner();
                 }}
-                className="absolute right-4 top-[calc(0.75rem+env(safe-area-inset-top))] sm:top-3 z-20 rounded-full bg-white/95 px-3 py-1 text-xs font-medium text-emerald-700 shadow backdrop-blur hover:bg-white"
+                className="absolute right-3 top-[calc(0.75rem+env(safe-area-inset-top))] sm:top-3 z-20 rounded-full bg-white/95 px-3 py-1 text-xs font-medium text-emerald-700 shadow backdrop-blur hover:bg-white"
               >
                 Flip
               </button>

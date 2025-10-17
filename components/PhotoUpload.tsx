@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import type { DietMode, ProductResult as TypesProductResult } from "@/types";
 import ResultCard from "@/components/ResultCard";
 import { analyzeIngredients, normalizeIngredients } from "@/lib/analyze";
+import { typography } from "@/lib/typography";
 
 type Props = {
   open: boolean;
@@ -222,13 +223,13 @@ export default function PhotoUpload({ open, onClose, dietMode }: Props) {
             exit={{ y: 50, opacity: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 24 }}
           >
-            <div className="relative mx-4 w-auto max-w-2xl rounded-t-2xl bg-white p-4 shadow-xl sm:mx-auto sm:w-full sm:rounded-2xl sm:p-5">
+            <div className="relative mx-auto w-full max-w-2xl rounded-t-2xl bg-white p-4 sm:p-6 shadow-xl sm:rounded-2xl">
               <div className="mb-3 flex items-center justify-between">
-                <div className="text-base font-semibold text-gray-900">Upload ingredient photo</div>
+                <div className={`text-gray-900 ${typography.h4}`}>Upload ingredient photo</div>
                 <button
                   type="button"
                   onClick={close}
-                  className="rounded-md bg-white px-2 py-1 text-sm text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50"
+                  className="rounded-md bg-white px-2 py-1 text-sm text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50 font-medium"
                 >
                   Close
                 </button>
@@ -246,8 +247,8 @@ export default function PhotoUpload({ open, onClose, dietMode }: Props) {
                   }
                 >
                   <div className="text-3xl" aria-hidden>📷</div>
-                  <div className="text-sm font-medium text-gray-900">Upload ingredient photo</div>
-                  <div className="text-xs text-gray-600">Drag and drop or click to choose</div>
+                  <div className={`${typography.label} text-gray-900`}>Upload ingredient photo</div>
+                  <div className={`${typography.caption} text-gray-600`}>Drag and drop or click to choose</div>
                   <input
                     type="file"
                     accept="image/jpeg,image/png"
@@ -293,7 +294,7 @@ export default function PhotoUpload({ open, onClose, dietMode }: Props) {
                     <button
                       type="button"
                       onClick={() => setSelection(null)}
-                      className="rounded-md bg-white px-3 py-2 text-sm text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50"
+                      className="rounded-md bg-white px-3 py-2 text-sm text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50 font-medium"
                     >
                       Reset selection
                     </button>
@@ -301,7 +302,8 @@ export default function PhotoUpload({ open, onClose, dietMode }: Props) {
                       <button
                         type="button"
                         onClick={() => setImageUrl(null)}
-                        className="rounded-md bg-white px-3 py-2 text-sm text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50"
+                        className="rounded-md bg-white px-4 py-2 text-sm text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50 font-medium"
+                        className="rounded-md bg-white px-4 py-2 text-sm text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50 font-medium"
                       >
                         Choose another
                       </button>

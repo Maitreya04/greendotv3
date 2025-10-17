@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Camera, Clock, Settings as SettingsIcon } from "lucide-react";
 import { get } from "idb-keyval";
+import { typography } from "@/lib/typography";
 
 type NavItem = {
   label: string;
@@ -78,7 +79,7 @@ export default function BottomNav() {
       style={{ paddingBottom: "env(safe-area-inset-bottom)", height: "72px" }}
       aria-label="Bottom Navigation"
     >
-      <ul className="mx-auto flex max-w-md items-stretch justify-around px-4 h-full">
+      <ul className="mx-auto flex max-w-md items-stretch justify-around px-2 h-full">
         {items.map(({ label, href, icon: Icon }) => {
           const isActive = pathname === href || (href !== "/" && pathname?.startsWith(href));
           return (
@@ -97,7 +98,7 @@ export default function BottomNav() {
                 >
                   <Icon className="h-6 w-6" />
                 </motion.div>
-                <span className={`text-xs transition-colors ${isActive ? "text-emerald-600 font-semibold" : "text-stone-400"}`}>{label}</span>
+                <span className={`${typography.caption} transition-colors ${isActive ? "text-emerald-600" : "text-stone-400"}`}>{label}</span>
                 {label === "History" && historyCount > 0 && (
                   <span className="absolute -top-2 right-6 grid min-w-[18px] place-items-center rounded-full bg-emerald-600 px-1.5 text-[10px] leading-none text-white">
                     {Math.min(historyCount, 99)}

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { typography } from "@/lib/typography";
 import { useMemo, useState, useCallback, useEffect, useRef, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ProductResult as VegWiseProductResult, Reason as VegWiseReason, DietMode } from "@/types";
@@ -32,7 +33,6 @@ import {
   Fish,
   Shrimp,
   AlertCircle,
-  Mushroom,
   Carrot,
   Drumstick
 } from "lucide-react";
@@ -317,9 +317,9 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
     try {
       const normalized = result.ingredientsNormalized || [];
       const hasGrain = normalized.some((i) => /wheat|rice|oat|barley|corn|maize/i.test(i));
-      if (hasGrain) return <Wheat size={56} className="text-gray-400" />;
+      if (hasGrain) return <Wheat size={56} className="text-stone-400" />;
     } catch {}
-    return <Package size={56} className="text-gray-400" />;
+    return <Package size={56} className="text-stone-400" />;
   }, [result.ingredientsNormalized]);
 
   return (
@@ -367,9 +367,9 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
 
             {/* Product info overlay */}
             <div className="pointer-events-none absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 via-black/30 to-transparent">
-              <div id={headingId} className="truncate text-2xl font-bold text-white drop-shadow">{name}</div>
-              <div className="mt-0.5 text-sm text-white/80">{result.brand || ""}</div>
-              <div className="mt-0.5 text-xs font-mono text-white/70">Barcode: {barcode}</div>
+              <div id={headingId} className={`truncate text-white drop-shadow ${typography.h3}`}>{name}</div>
+              <div className={`mt-0.5 text-white/80 ${typography.bodySmall}`}>{result.brand || ""}</div>
+              <div className={`mt-0.5 text-white/70 ${typography.barcode}`}>Barcode: {barcode}</div>
             </div>
 
             {/* Floating verdict badge */}
@@ -424,8 +424,8 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
                 )}
               </div>
               <div>
-                <div className="text-3xl font-bold">{meta.text}</div>
-                <div className="text-sm/6 text-white/90">{dietMode ? `Verified for ${capitalize(dietMode)}` : "Diet analysis"}</div>
+                <div className={`${typography.h2} text-white`}>{meta.text}</div>
+                <div className={`${typography.bodySmall} text-white/90`}>{dietMode ? `Verified for ${capitalize(dietMode)}` : "Diet analysis"}</div>
               </div>
             </div>
             <div className="mt-4">
@@ -449,7 +449,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
         {/* 3) DETAILED ANALYSIS */}
         <motion.div variants={itemVariants} className="px-4 pt-4">
           {Array.isArray(reasons) && reasons.length > 0 && (
-            <SectionCard title="Flagged ingredients" subtitle="Detected terms affecting the verdict" className="mb-3">
+            <SectionCard title="Flagged ingredients" subtitle="Detected terms affecting the verdict" className="mb-6">
               <motion.ul
                 initial="hidden"
                 animate="visible"
@@ -460,7 +460,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
                   <motion.li
                     key={idx}
                     variants={{ hidden: { opacity: 0, y: 6 }, visible: { opacity: 1, y: 0 } }}
-                    className={`flex items-start gap-3 rounded-lg p-3 ring-1 ${chipRing(r.category)} ${chipBg(r.category)} ${chipText(r.category)} border-l-4 ${chipBorder(r.category)}`}
+                    className={`flex items-start gap-3 rounded-lg p-4 ring-1 ${chipRing(r.category)} ${chipBg(r.category)} ${chipText(r.category)} border-l-4 ${chipBorder(r.category)}`}
                     aria-label={`Contains ${r.ingredient}. ${r.explanation}`}
                   >
                     <span className="text-xl" aria-hidden>{chipIcon(r.category)}</span>
@@ -475,7 +475,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
           )}
 
           {/* Original Ingredients (collapsible) */}
-          <div className="mb-2 text-sm font-semibold text-gray-900">Ingredients</div>
+          <div className={`${typography.label} text-stone-900 mb-3`}>Ingredients</div>
           <div className="relative">
             <AnimatePresence initial={false}>
               <motion.div
@@ -484,20 +484,20 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
                 animate={{ height: expanded ? "auto" : 112 }}
                 exit={{ height: 112 }}
                 transition={{ type: "spring", stiffness: 220, damping: 26 }}
-                className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-800"
+                className="overflow-hidden rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm text-stone-800"
               >
                 <div className="whitespace-pre-wrap leading-relaxed font-mono">
                   {highlighted}
                 </div>
               </motion.div>
             </AnimatePresence>
-            <div className="mt-2 flex justify-end">
+            <div className="mt-3 flex justify-end">
               <motion.button
                 type="button"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setExpanded((v) => !v)}
-                className="rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-700 ring-1 ring-gray-200 shadow-sm"
+                className={`rounded-full bg-white px-4 py-2 ${typography.caption} text-stone-700 ring-1 ring-stone-200 shadow-sm`}
                 aria-expanded={expanded}
                 aria-controls="ingredients-panel"
               >
@@ -513,11 +513,11 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
           className="px-4 pt-4"
           transition={{ type: "spring", stiffness: 240, damping: 22, delay: 0.3 }}
         >
-          <div className="mb-2 flex justify-end">
-            <button
+          <div className="mb-3 flex justify-end">
+              <button
               type="button"
               onClick={() => setShowNutrition((v) => !v)}
-              className="rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-700 ring-1 ring-stone-200 shadow-sm"
+              className={`rounded-full bg-white px-4 py-2 ${typography.caption} text-stone-700 ring-1 ring-stone-200 shadow-sm`}
               aria-expanded={showNutrition}
               aria-controls="nutrition-card"
             >
@@ -527,7 +527,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {/* Allergens */}
             <div className="rounded-2xl p-4 shadow-sm border border-stone-100 bg-amber-50 hover:shadow-md transition-transform hover:-translate-y-0.5">
-              <div className="mb-2 text-sm font-semibold flex items-center gap-1"><TriangleAlert size={14} /> Allergens</div>
+          <div className={`mb-2 flex items-center gap-1 ${typography.label}`}><TriangleAlert size={14} /> Allergens</div>
               {result.allergens && result.allergens.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {result.allergens.map((a) => {
@@ -535,7 +535,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
                     return (
                       <span
                         key={`${key}`}
-                        className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs text-gray-800 ring-1 ring-gray-200"
+                        className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs text-stone-800 ring-1 ring-gray-200"
                       >
                         <span aria-hidden className="grid place-items-center">{renderAllergenIcon(key)}</span>
                         <span className="capitalize">{key}</span>
@@ -544,14 +544,14 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
                   })}
                 </div>
               ) : (
-                <div className="text-sm text-emerald-700">No common allergens ✓</div>
+                <div className={`${typography.bodySmall} text-emerald-700`}>No common allergens ✓</div>
               )}
             </div>
 
             {/* Nutrition (collapsible via toggle) */}
             {showNutrition && (
               <div id="nutrition-card" className="rounded-2xl p-4 shadow-sm border border-stone-100 bg-emerald-50 hover:shadow-md transition-transform hover:-translate-y-0.5">
-                <div className="mb-2 text-sm font-semibold flex items-center gap-1"><BarChart3 size={14} /> Nutrition</div>
+                <div className={`mb-2 flex items-center gap-1 ${typography.label}`}><BarChart3 size={14} /> Nutrition</div>
                 {result.nutrition ? (
                   <div className="grid grid-cols-3 gap-2 text-center">
                     <CircleStat label="Kcal" value={result.nutrition.calories ?? 0} unit="" pct={clamp((result.nutrition.calories ?? 0) / 300, 0, 1)} />
@@ -559,19 +559,19 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
                     <CircleStat label="Protein" value={result.nutrition.protein ?? 0} unit="g" pct={clamp((result.nutrition.protein ?? 0) / 25, 0, 1)} />
                   </div>
                 ) : (
-                  <div className="text-sm text-gray-500">Data not available</div>
+                  <div className={`${typography.bodySmall} text-stone-500`}>Data not available</div>
                 )}
               </div>
             )}
 
             {/* Source */}
             <div className="rounded-2xl p-4 shadow-sm border border-stone-100 bg-stone-50 hover:shadow-md transition-transform hover:-translate-y-0.5">
-              <div className="mb-2 text-sm font-semibold">Source</div>
+              <div className={`${typography.label}`}>Source</div>
               <a
                 href={`https://world.openfoodfacts.org/product/${encodeURIComponent(barcode)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm underline underline-offset-4 decoration-stone-400 hover:decoration-stone-600"
+                className={`${typography.bodySmall} underline underline-offset-4 decoration-stone-400 hover:decoration-stone-600`}
               >
                 Open Food Facts
               </a>
@@ -582,7 +582,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
 
             {/* Actions */}
             <div className="rounded-2xl p-4 shadow-sm border border-stone-100 bg-white hover:shadow-md transition-transform hover:-translate-y-0.5">
-              <div className="mb-2 text-sm font-semibold">Quick actions</div>
+              <div className={`${typography.label}`}>Quick actions</div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -611,7 +611,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
 
         {/* 5) BOTTOM ACTIONS */}
         <div className="pb-[7.5rem] sm:pb-6" />
-        <div className="fixed inset-x-0 bottom-0 z-[70] bg-white/95 backdrop-blur border-t border-stone-200 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+        <div className="fixed inset-x-0 bottom-0 z-[70] bg-white/95 backdrop-blur border-t border-stone-200 px-4 pt-3 pb-safe">
           <div className="mx-auto w-full max-w-2xl md:max-w-3xl">
             <div className="flex items-center gap-3">
               <motion.button
@@ -640,7 +640,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
 
         {/* 6) Source citation */}
         <motion.div variants={itemVariants} className="px-4 pt-4 pb-6">
-          <div className="text-xs text-gray-500">
+          <div className={`${typography.caption} text-stone-500`}>
             Data source: <a href={`https://world.openfoodfacts.org/product/${encodeURIComponent(barcode)}`} target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-700">Open Food Facts</a>. Ingredients and nutrition are sourced from OFF; dietary analysis is computed locally.
           </div>
         </motion.div>
@@ -769,7 +769,7 @@ function chipIcon(category: VegWiseReason["category"]) {
     case "root":
       return <Carrot size={18} />;
     case "fungi":
-      return <Mushroom size={18} />;
+      return <span className="text-[18px] leading-none" aria-hidden>🍄</span>;
     default:
       return <AlertCircle size={18} />;
   }

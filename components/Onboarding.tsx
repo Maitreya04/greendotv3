@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { typography } from "@/lib/typography";
 import { AnimatePresence, motion } from "framer-motion";
 import { Info, Check } from "lucide-react";
 
@@ -96,7 +97,7 @@ const DietCard = ({
           <div className="flex items-center gap-2">
             <div className="font-semibold text-stone-800">{title}</div>
             {badge ? (
-              <span className="text-xs rounded-full bg-black/10 text-black/70 px-2 py-0.5">
+              <span className="text-xs rounded-full bg-stone-900/10 text-stone-900/70 px-2 py-0.5">
                 {badge}
               </span>
             ) : null}
@@ -284,13 +285,13 @@ export default function Onboarding({ onComplete }: { onComplete?: (state: Onboar
                   </motion.div>
                 </div>
                 <div className="relative z-10 max-w-md text-center space-y-4">
-                  <h1 className="text-4xl font-bold text-stone-900">Know what you're eating</h1>
-                  <p className="text-stone-600">Instant dietary verification for every product</p>
+                  <h1 className={`${typography.h1} text-stone-900`}>Know what you're eating</h1>
+                  <p className={`${typography.body} text-stone-600`}>Instant dietary verification for every product</p>
                   <div className="pt-4">
                     <button
                       type="button"
                       onClick={next}
-                      className="min-h-12 px-6 py-3 rounded-2xl text-white text-base bg-emerald-600 hover:bg-emerald-700 shadow-lg transition"
+                      className="min-h-12 px-6 py-3 rounded-2xl text-white bg-emerald-600 hover:bg-emerald-700 shadow-lg transition font-semibold"
                     >
                       Get Started
                     </button>
@@ -301,7 +302,7 @@ export default function Onboarding({ onComplete }: { onComplete?: (state: Onboar
 
             {page === 1 && (
               <div className="h-full flex flex-col p-8">
-                <h2 className="text-2xl font-semibold text-stone-900 mt-8">What do you follow?</h2>
+                <h2 className={`${typography.h2} text-stone-900 mt-8`}>What do you follow?</h2>
                 <div className="mt-6 grid grid-cols-1 gap-4">
                   <DietCard
                     icon="🥕"
@@ -341,18 +342,18 @@ export default function Onboarding({ onComplete }: { onComplete?: (state: Onboar
                 </div>
 
                 <div className="mt-auto pt-6 flex items-center justify-between">
-                  <button
+                    <button
                     type="button"
                     onClick={prev}
-                    className="text-stone-600 hover:text-stone-800"
+                      className={`${typography.label} text-stone-600 hover:text-stone-800`}
                   >
                     Back
                   </button>
-                  <button
+                    <button
                     type="button"
                     disabled={!canContinue}
                     onClick={next}
-                    className={`min-h-12 px-6 py-3 rounded-2xl text-white text-base shadow-lg transition ${
+                      className={`min-h-12 px-6 py-3 rounded-2xl text-white shadow-lg transition font-semibold ${
                       canContinue ? "bg-emerald-600 hover:bg-emerald-700" : "bg-stone-300 cursor-not-allowed"
                     }`}
                   >
@@ -364,7 +365,7 @@ export default function Onboarding({ onComplete }: { onComplete?: (state: Onboar
 
             {page === 2 && (
               <div className="h-full flex flex-col p-8">
-                <h2 className="text-2xl font-semibold text-stone-900 mt-8">Any allergies or restrictions?</h2>
+                <h2 className={`${typography.h2} text-stone-900 mt-8`}>Any allergies or restrictions?</h2>
                 <div className="mt-6 grid grid-cols-2 gap-3">
                   <Chip
                     label="Gluten-free"
@@ -399,7 +400,7 @@ export default function Onboarding({ onComplete }: { onComplete?: (state: Onboar
                 </div>
 
                 <div className="mt-6">
-                  <label className="block text-sm text-stone-700 mb-2">Other dietary notes (optional)</label>
+                  <label className={`block ${typography.label} text-stone-700 mb-2`}>Other dietary notes (optional)</label>
                   <textarea
                     placeholder="Anything else we should know?"
                     value={state.notes}
@@ -413,14 +414,14 @@ export default function Onboarding({ onComplete }: { onComplete?: (state: Onboar
                   <button
                     type="button"
                     onClick={prev}
-                    className="text-stone-600 hover:text-stone-800"
+                    className={`${typography.label} text-stone-600 hover:text-stone-800`}
                   >
                     Back
                   </button>
                   <button
                     type="button"
                     onClick={handleComplete}
-                    className="min-h-12 px-6 py-3 rounded-2xl text-white text-base shadow-lg transition bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+                    className="min-h-12 px-6 py-3 rounded-2xl text-white shadow-lg transition bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 font-semibold"
                   >
                     Start Scanning
                   </button>
@@ -458,9 +459,9 @@ export default function Onboarding({ onComplete }: { onComplete?: (state: Onboar
             >
               <div className="flex items-center gap-2">
                 <div className="text-xl">🙏</div>
-                <div className="font-semibold">About Jain dietary principles</div>
+                <div className="font-semibold text-stone-900">About Jain dietary principles</div>
               </div>
-              <p className="text-sm text-stone-700 mt-3">
+              <p className={`${typography.bodySmall} text-stone-700 mt-3`}>
                 Jain cuisine emphasizes ahiṁsā (non‑violence). In addition to vegetarianism, many
                 followers avoid root vegetables (e.g., onion, garlic, potatoes) and fungi to
                 minimize harm to microorganisms and entire plants.
@@ -469,7 +470,7 @@ export default function Onboarding({ onComplete }: { onComplete?: (state: Onboar
                 <button
                   type="button"
                   onClick={() => setShowJainInfo(false)}
-                  className="min-h-10 px-4 py-2 rounded-xl bg-stone-900 text-white"
+                  className="min-h-10 px-4 py-2 rounded-xl bg-stone-900 text-white font-medium"
                 >
                   Got it
                 </button>

@@ -7,8 +7,7 @@ import { fetchProduct, type ProductResult as OffProductResult } from "@/lib/offA
 import { analyzeIngredients, normalizeIngredients, type AnalysisResult } from "@/lib/analyze";
 import type { DietMode, ProductResult as TypesProductResult } from "@/types";
 import Onboarding from "@/components/Onboarding";
-import Link from "next/link";
-import { Settings as SettingsIcon } from "lucide-react";
+import { typography } from "@/lib/typography";
 // DietToggle removed
 
 type ViewState = "scanner" | "result" | "error";
@@ -188,7 +187,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-[100svh] w-full bg-black text-white">
+      <div className="min-h-[100svh] w-full bg-black text-white">
       {/* Camera Surface - use Scanner's own overlay and keep it visible */}
       {!showOnboarding && (
         <Scanner
@@ -202,25 +201,14 @@ export default function Home() {
         <div className="pointer-events-none fixed inset-0 z-40 bg-emerald-500/30" />
       )}
 
-      {/* Top Bar */}
-      {!showOnboarding && (
-        <div className="fixed top-0 left-0 right-0 z-30 pt-[max(0px,env(safe-area-inset-top))]">
-          <div className="mx-4 md:mx-auto md:max-w-[900px] mt-3 h-16 rounded-2xl bg-white/80 text-black shadow-sm backdrop-blur-xl ring-1 ring-black/5 flex items-center justify-between px-4">
-            <div className="text-xl font-bold select-none">🌱 VegWise</div>
-            {/* DietToggle removed */}
-            <Link href="/settings" aria-label="Settings" className="grid h-9 w-9 place-items-center rounded-xl text-emerald-700 hover:bg-emerald-50 ring-1 ring-emerald-200">
-              <SettingsIcon size={18} />
-            </Link>
-          </div>
-        </div>
-      )}
+      {/* Top Bar moved to global layout */}
 
       {/* Remove page-level scanner overlay; rely on Scanner component's overlay */}
 
       {/* Bottom Card Actions */}
       {!showOnboarding && view === "scanner" && (
-        <div className="fixed inset-x-0 bottom-0 z-30 pt-2 pb-[max(1rem,calc(1rem+env(safe-area-inset-bottom)))]">
-          <div className="mx-4 md:mx-auto md:max-w-[900px] rounded-t-3xl bg-white text-black shadow-2xl ring-1 ring-black/5 p-6">
+        <div className="fixed inset-x-0 bottom-0 z-30 pt-2 pb-safe">
+          <div className="mx-4 sm:mx-auto sm:max-w-2xl md:max-w-3xl rounded-t-3xl bg-white text-stone-900 shadow-2xl ring-1 ring-black/5 p-6">
             {scannerStatus !== "error" && (
               <button
                 type="button"
@@ -230,7 +218,7 @@ export default function Home() {
                 <span className="mr-2" aria-hidden>📸</span> Upload Photo
               </button>
             )}
-            <div className="mt-3 text-center text-xs text-stone-500">Powered by Open Food Facts</div>
+            <div className="mt-3 text-center text-stone-500 text-xs">Powered by Open Food Facts</div>
           </div>
         </div>
       )}

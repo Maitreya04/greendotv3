@@ -41,6 +41,7 @@ body {
     "Segoe UI Emoji";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-optical-sizing: auto;
 }
 
 * {
@@ -102,4 +103,9 @@ a {
 .glass-hover:hover {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.16);
   transform: translateY(-1px);
+}
+
+/* Safe-area bottom padding utility */
+.pb-safe {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
 }

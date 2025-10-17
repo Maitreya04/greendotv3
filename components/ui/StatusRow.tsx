@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { typography } from "@/lib/typography";
 import { CheckCircle2, XCircle, AlertTriangle, Info } from "lucide-react";
 
 type Props = {
@@ -24,12 +25,12 @@ export default function StatusRow({ title, description, state, className, infoAr
         <div className="mt-[2px]">{tone.icon}</div>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <div className="font-semibold text-stone-900">{title}</div>
+            <div className={`${typography.label} text-stone-900`}>{title}</div>
             <button type="button" className="text-stone-500 hover:text-stone-700" aria-label={infoAriaLabel ?? `More info about ${title}`}>
               <Info size={16} />
             </button>
           </div>
-          <div className="text-sm text-stone-700">{description}</div>
+          <div className={`${typography.bodySmall} text-stone-700`}>{description}</div>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { typography } from "@/lib/typography";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { DietMode } from "@/types";
@@ -222,10 +223,10 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen w-full bg-stone-50 text-stone-900">
-      <div className="mx-auto w-full px-4 py-6 sm:max-w-[720px] lg:max-w-[900px]">
-        <header className="mb-4">
-          <h1 className="text-xl font-semibold">Settings</h1>
-          <p className="mt-1 text-sm text-stone-600">Clean, organized controls.</p>
+      <div className="mx-auto w-full px-4 sm:px-8 lg:px-0 sm:max-w-2xl lg:max-w-4xl py-6">
+        <header className="mb-6">
+          <h1 className={`${typography.h4}`}>Settings</h1>
+          <p className={`mt-1 ${typography.bodySmall} text-stone-600`}>Clean, organized controls.</p>
         </header>
 
         {message && (
@@ -240,8 +241,8 @@ export default function SettingsPage() {
         )}
 
         {/* DIET PREFERENCES */}
-        <section className="mb-4 rounded-2xl bg-white p-6 shadow-sm">
-          <div className="mb-4 text-xs font-semibold text-stone-500">DIET PREFERENCES</div>
+        <section className="mb-12 rounded-2xl bg-white p-6 sm:p-8 shadow-sm">
+          <div className={`${typography.caption} text-stone-500 mb-4`}>DIET PREFERENCES</div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {DIETS.map((diet) => {
               const selected = selectedDiet === diet.key;
@@ -250,7 +251,7 @@ export default function SettingsPage() {
                   key={diet.key}
                   type="button"
                   onClick={() => { setSelectedDiet(diet.key); rerunOnboarding(diet.key); }}
-                  className={`group relative rounded-2xl p-4 text-left transition-all ring-1 ${
+                  className={`group relative rounded-2xl p-4 sm:p-6 text-left transition-all ring-1 ${
                     selected ? "ring-emerald-500" : "ring-stone-200 hover:ring-stone-300"
                   } bg-white shadow-sm`}
                   aria-pressed={selected}
@@ -258,16 +259,16 @@ export default function SettingsPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-base font-semibold">{diet.label}</span>
+                        <span className={`${typography.label}`}>{diet.label}</span>
                         {selected && <Check className="h-4 w-4 text-emerald-600" aria-hidden />}
                       </div>
-                      <p className="mt-1 text-sm text-stone-600">{diet.description}</p>
+                      <p className={`mt-1 ${typography.bodySmall} text-stone-600`}>{diet.description}</p>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); setLearnKey(diet.key); }}
-                    className="mt-3 inline-flex items-center gap-1 text-xs text-emerald-700 hover:underline"
+                    className={`mt-3 inline-flex items-center gap-1 ${typography.caption} text-emerald-700 hover:underline`}
                   >
                     Learn more <ChevronRight className="h-3.5 w-3.5" aria-hidden />
                   </button>
@@ -278,26 +279,26 @@ export default function SettingsPage() {
 
           {/* Additional Restrictions */}
           <div className="mt-6 rounded-2xl ring-1 ring-stone-200">
-            <div className="px-4 py-3 text-xs font-semibold text-stone-500">Additional Restrictions</div>
+            <div className={`px-4 py-3 ${typography.caption} text-stone-500`}>Additional Restrictions</div>
             <div className="divide-y divide-stone-200">
               <div className="flex items-center justify-between px-4 py-4">
                 <div>
-                  <div className="text-sm font-medium">Avoid alcohol</div>
-                  <div className="text-xs text-stone-500">Flag products containing ethanol or spirits.</div>
+                  <div className={`${typography.label}`}>Avoid alcohol</div>
+                  <div className={`${typography.caption} text-stone-500`}>Flag products containing ethanol or spirits.</div>
                 </div>
                 <Switch checked={restrictions.alcohol} onChange={(v) => setRestrictions((s) => ({ ...s, alcohol: v }))} label="Avoid alcohol" />
               </div>
               <div className="flex items-center justify-between px-4 py-4">
                 <div>
-                  <div className="text-sm font-medium">Nut-free</div>
-                  <div className="text-xs text-stone-500">Highlight peanuts and tree nuts.</div>
+                  <div className={`${typography.label}`}>Nut-free</div>
+                  <div className={`${typography.caption} text-stone-500`}>Highlight peanuts and tree nuts.</div>
                 </div>
                 <Switch checked={restrictions.nuts} onChange={(v) => setRestrictions((s) => ({ ...s, nuts: v }))} label="Nut-free" />
               </div>
               <div className="flex items-center justify-between px-4 py-4">
                 <div>
-                  <div className="text-sm font-medium">Gluten-free</div>
-                  <div className="text-xs text-stone-500">Warn on wheat, barley, rye, or oats.</div>
+                  <div className={`${typography.label}`}>Gluten-free</div>
+                  <div className={`${typography.caption} text-stone-500`}>Warn on wheat, barley, rye, or oats.</div>
                 </div>
                 <Switch checked={restrictions.gluten} onChange={(v) => setRestrictions((s) => ({ ...s, gluten: v }))} label="Gluten-free" />
               </div>
@@ -306,14 +307,14 @@ export default function SettingsPage() {
         </section>
 
         {/* APPEARANCE */}
-        <section className="mb-4 rounded-2xl bg-white p-6 shadow-sm">
-          <div className="mb-1 text-xs font-semibold text-stone-500">APPEARANCE</div>
+        <section className="mb-12 rounded-2xl bg-white p-6 sm:p-8 shadow-sm">
+          <div className={`${typography.caption} text-stone-500 mb-1`}>APPEARANCE</div>
           <div className="flex items-center justify-between py-4">
             <div className="flex items-center gap-3">
               <Shield className="h-5 w-5 text-stone-400" aria-hidden />
               <div>
-                <div className="text-sm font-medium">Theme</div>
-                <div className="text-xs text-stone-500">Light, Dark, or follow System</div>
+                <div className={`${typography.label}`}>Theme</div>
+                <div className={`${typography.caption} text-stone-500`}>Light, Dark, or follow System</div>
               </div>
             </div>
             <Segmented value={theme} onChange={handleChangeTheme} />
@@ -321,14 +322,14 @@ export default function SettingsPage() {
         </section>
 
         {/* DATA & PRIVACY */}
-        <section className="mb-4 rounded-2xl bg-white p-6 shadow-sm">
-          <div className="mb-1 text-xs font-semibold text-stone-500">DATA & PRIVACY</div>
+        <section className="mb-12 rounded-2xl bg-white p-6 sm:p-8 shadow-sm">
+          <div className={`${typography.caption} text-stone-500 mb-1`}>DATA & PRIVACY</div>
           <Link href="/history" className="group flex items-center justify-between py-4 border-b last:border-0 hover:bg-stone-50 rounded-xl px-3 -mx-3 transition-colors">
             <div className="flex items-center gap-3">
               <Clock className="h-5 w-5 text-stone-400" aria-hidden />
               <div>
-                <div className="text-sm font-medium">Scan History</div>
-                <div className="text-xs text-stone-500">{historyCount} scans</div>
+                <div className={`${typography.label}`}>Scan History</div>
+                <div className={`${typography.caption} text-stone-500`}>{historyCount} scans</div>
               </div>
             </div>
             <ChevronRight className="h-4 w-4 text-stone-400" aria-hidden />
@@ -353,39 +354,39 @@ export default function SettingsPage() {
         </section>
 
         {/* ABOUT */}
-        <section className="mb-24 rounded-2xl bg-white p-6 shadow-sm">
-          <div className="mb-1 text-xs font-semibold text-stone-500">ABOUT</div>
+        <section className="mb-24 rounded-2xl bg-white p-6 sm:p-8 shadow-sm">
+          <div className={`${typography.caption} text-stone-500 mb-1`}>ABOUT</div>
 
           <div className="divide-y divide-stone-200 rounded-xl ring-1 ring-stone-200 overflow-hidden">
             <div className="flex items-center justify-between px-4 py-4">
-              <span className="text-sm text-stone-600">App version</span>
-              <span className="text-sm font-medium">v{appVersion}</span>
+              <span className={`${typography.bodySmall} text-stone-600">App version</span>
+              <span className={`${typography.bodySmall} font-medium`}>v{appVersion}</span>
             </div>
             <a href="https://world.openfoodfacts.org" target="_blank" rel="noreferrer" className="flex items-center justify-between px-4 py-4 hover:bg-stone-50">
-              <span className="text-sm text-stone-600">Data source</span>
-              <span className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700">Open Food Facts <ExternalLink className="h-4 w-4" aria-hidden /></span>
+              <span className={`${typography.bodySmall} text-stone-600`}>Data source</span>
+              <span className={`inline-flex items-center gap-1 ${typography.bodySmall} font-medium text-emerald-700`}>Open Food Facts <ExternalLink className="h-4 w-4" aria-hidden /></span>
             </a>
             <a href="https://github.com/maitreyapatel/greendotv3/blob/main/LICENSE" target="_blank" rel="noreferrer" className="flex items-center justify-between px-4 py-4 hover:bg-stone-50">
-              <span className="text-sm text-stone-600">License</span>
-              <span className="inline-flex items-center gap-2 text-sm font-medium text-stone-800">MIT <ExternalLink className="h-4 w-4" aria-hidden /></span>
+              <span className={`${typography.bodySmall} text-stone-600`}>License</span>
+              <span className={`inline-flex items-center gap-2 ${typography.bodySmall} font-medium text-stone-800`}>MIT <ExternalLink className="h-4 w-4" aria-hidden /></span>
             </a>
             <div className="flex items-center justify-between px-4 py-4">
-              <span className="text-sm text-stone-600">Privacy</span>
-              <span className="inline-flex items-center gap-2 text-sm font-medium text-emerald-700"><Check className="h-4 w-4" aria-hidden /> No data collection</span>
+              <span className={`${typography.bodySmall} text-stone-600`}>Privacy</span>
+              <span className={`inline-flex items-center gap-2 ${typography.bodySmall} font-medium text-emerald-700`}><Check className="h-4 w-4" aria-hidden /> No data collection</span>
             </div>
           </div>
 
           <div className="mt-4 grid grid-cols-1 gap-2">
             <a href="https://apps.apple.com" target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-xl px-4 py-3 hover:bg-stone-50 transition cursor-pointer">
-              <div className="flex items-center gap-3 text-stone-800"><Star className="h-5 w-5 text-stone-400" aria-hidden /> <span className="text-sm font-medium">Rate on App Store</span></div>
+              <div className="flex items-center gap-3 text-stone-800"><Star className="h-5 w-5 text-stone-400" aria-hidden /> <span className={`${typography.bodySmall} font-medium`}>Rate on App Store</span></div>
               <ChevronRight className="h-4 w-4 text-stone-400" aria-hidden />
             </a>
             <a href="mailto:?subject=VegWise%20Feedback" className="flex items-center justify-between rounded-xl px-4 py-3 hover:bg-stone-50 transition cursor-pointer">
-              <div className="flex items-center gap-3 text-stone-800"><Mail className="h-5 w-5 text-stone-400" aria-hidden /> <span className="text-sm font-medium">Report Issue</span></div>
+              <div className="flex items-center gap-3 text-stone-800"><Mail className="h-5 w-5 text-stone-400" aria-hidden /> <span className={`${typography.bodySmall} font-medium`}>Report Issue</span></div>
               <ChevronRight className="h-4 w-4 text-stone-400" aria-hidden />
             </a>
             <a href="https://github.com/maitreyapatel/greendotv3" target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-xl px-4 py-3 hover:bg-stone-50 transition cursor-pointer">
-              <div className="flex items-center gap-3 text-stone-800"><Github className="h-5 w-5 text-stone-400" aria-hidden /> <span className="text-sm font-medium">GitHub Repository</span></div>
+              <div className="flex items-center gap-3 text-stone-800"><Github className="h-5 w-5 text-stone-400" aria-hidden /> <span className={`${typography.bodySmall} font-medium`}>GitHub Repository</span></div>
               <ChevronRight className="h-4 w-4 text-stone-400" aria-hidden />
             </a>
           </div>
@@ -408,7 +409,7 @@ export default function SettingsPage() {
               exit={{ y: 24, scale: 0.98, opacity: 0 }}
               transition={{ type: "spring", stiffness: 260, damping: 26 }}
               onClick={(e) => e.stopPropagation()}
-              className="absolute left-1/2 top-1/2 w-[90%] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-2xl"
+              className="absolute left-1/2 top-1/2 w-[92%] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-2xl"
             >
               <div className="flex items-center gap-2">
                 <Info className="h-5 w-5 text-stone-600" aria-hidden />
@@ -444,7 +445,7 @@ export default function SettingsPage() {
                 exit={{ y: 40, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 280, damping: 26 }}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full sm:w-auto sm:max-w-md sm:rounded-2xl bg-white p-5 shadow-2xl sm:mx-0 mx-4 rounded-t-2xl"
+                className="w-full sm:w-auto sm:max-w-md sm:rounded-2xl bg-white p-5 shadow-2xl sm:mx-0 mx-2 rounded-t-2xl"
               >
                 <div className="text-base font-semibold">Clear all data?</div>
                 <div className="mt-1 text-sm text-stone-600">This resets preferences and removes local history.</div>
