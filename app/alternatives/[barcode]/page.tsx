@@ -3,7 +3,6 @@ import { fetchSuggestions, type SuggestionPrefs } from "@/lib/suggest";
 import { typography } from "@/lib/typography";
 import Image from "next/image";
 import Link from "next/link";
-import type { PageProps } from "next";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +24,13 @@ function getQueryPref(searchParams: Record<string, string | string[] | undefined
   };
 }
 
-export default async function AlternativesPage({ params, searchParams }: PageProps<{ barcode: string }, Record<string, string | string[] | undefined>>) {
+export default async function AlternativesPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ barcode: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { barcode } = await params;
   const sp = await searchParams;
   const prefs = getQueryPref(sp);
