@@ -33,12 +33,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} ${inter.variable}`}>
-        <div style={{ paddingBottom: "calc(4.5rem + env(safe-area-inset-bottom))" }}>
-          <div className="mx-auto w-full max-w-[900px] px-4 sm:px-6">
-            <PageTransition>
-              {children}
-            </PageTransition>
-          </div>
+        <div className="page-content" style={{ paddingBottom: "calc(4.5rem + max(16px, env(safe-area-inset-bottom)))" }}>
+          <PageTransition>
+            {children}
+          </PageTransition>
         </div>
         <BottomNav />
       </body>

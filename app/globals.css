@@ -49,6 +49,13 @@ body {
   margin: 0;
 }
 
+/* Global page gutters with safe-area support */
+.page-content {
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+  padding-top: max(16px, env(safe-area-inset-top));
+}
+
 a {
   color: inherit;
   text-decoration: none;
