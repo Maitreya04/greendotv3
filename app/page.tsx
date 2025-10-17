@@ -40,6 +40,7 @@ export default function Home() {
     try {
       const done = typeof window !== "undefined" ? localStorage.getItem("greendot.onboarding.done") : null;
       if (!done) setShowOnboarding(true);
+      else setShowOnboarding(false);
       // If preferences exist, hydrate default diet
       const raw = typeof window !== "undefined" ? localStorage.getItem("greendot.onboarding") : null;
       if (raw) {
