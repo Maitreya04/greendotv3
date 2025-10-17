@@ -359,7 +359,7 @@ export default function SettingsPage() {
 
           <div className="divide-y divide-stone-200 rounded-xl ring-1 ring-stone-200 overflow-hidden">
             <div className="flex items-center justify-between px-4 py-4">
-              <span className={`${typography.bodySmall} text-stone-600">App version</span>
+              <span className={`${typography.bodySmall} text-stone-600`}>App version</span>
               <span className={`${typography.bodySmall} font-medium`}>v{appVersion}</span>
             </div>
             <a href="https://world.openfoodfacts.org" target="_blank" rel="noreferrer" className="flex items-center justify-between px-4 py-4 hover:bg-stone-50">
