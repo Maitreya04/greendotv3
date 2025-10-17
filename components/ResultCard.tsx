@@ -10,13 +10,11 @@ import SectionCard from "@/components/ui/SectionCard";
 import StatusRow from "@/components/ui/StatusRow";
 import { DietTag, TagState } from "@/components/ui/DietTag";
 import { Leaf, Sprout, Wheat, Milk, Hand, ShieldAlert, HeartPulse } from "lucide-react";
-import DietToggle from "@/components/ui/DietToggle";
 
 type Props = {
   result: VegWiseProductResult;
   onScanAnother: () => void;
   dietMode?: DietMode;
-  onChangeDietMode?: (next: DietMode) => void;
 };
 
 function verdictMeta(verdict: VegWiseProductResult["analysis"]["verdict"]) {
@@ -388,11 +386,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-white/80">{confidence}% confidence</div>
               </div>
             </div>
-            {onChangeDietMode && (
-              <div className="mt-4 flex justify-end">
-                <DietToggle value={(dietMode ?? "vegetarian") as DietMode} onChange={onChangeDietMode} size="sm" />
-              </div>
-            )}
+            {/* Diet toggle removed */}
           </div>
         </motion.div>
 

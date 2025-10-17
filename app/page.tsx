@@ -9,7 +9,7 @@ import type { DietMode, ProductResult as TypesProductResult } from "@/types";
 import Onboarding from "@/components/Onboarding";
 import Link from "next/link";
 import { Settings as SettingsIcon } from "lucide-react";
-import DietToggle from "@/components/ui/DietToggle";
+// DietToggle removed
 
 type ViewState = "scanner" | "result" | "error";
 
@@ -207,9 +207,7 @@ export default function Home() {
         <div className="fixed top-0 left-0 right-0 z-30 pt-[max(0px,env(safe-area-inset-top))]">
           <div className="mx-4 md:mx-auto md:max-w-[900px] mt-3 h-16 rounded-2xl bg-white/80 text-black shadow-sm backdrop-blur-xl ring-1 ring-black/5 flex items-center justify-between px-4">
             <div className="text-xl font-bold select-none">🌱 VegWise</div>
-            <div className="flex items-center justify-center">
-              <DietToggle value={dietMode} onChange={setDietMode} size="sm" />
-            </div>
+            {/* DietToggle removed */}
             <Link href="/settings" aria-label="Settings" className="grid h-9 w-9 place-items-center rounded-xl text-emerald-700 hover:bg-emerald-50 ring-1 ring-emerald-200">
               <SettingsIcon size={18} />
             </Link>
