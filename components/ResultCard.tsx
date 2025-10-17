@@ -9,7 +9,33 @@ import { analyzeIngredients } from "@/lib/analyze";
 import SectionCard from "@/components/ui/SectionCard";
 import StatusRow from "@/components/ui/StatusRow";
 import { DietTag, TagState } from "@/components/ui/DietTag";
-import { Leaf, Sprout, Wheat, Milk, Hand, ShieldAlert, HeartPulse } from "lucide-react";
+import {
+  Leaf,
+  Sprout,
+  Wheat,
+  Milk,
+  Hand,
+  ShieldAlert,
+  HeartPulse,
+  Check,
+  X,
+  AlertTriangle,
+  Share2,
+  Flag,
+  Heart as HeartIcon,
+  Camera,
+  Clock,
+  BarChart3,
+  TriangleAlert,
+  Package,
+  Egg,
+  Fish,
+  Shrimp,
+  AlertCircle,
+  Mushroom,
+  Carrot,
+  Drumstick
+} from "lucide-react";
 
 type Props = {
   result: VegWiseProductResult;
@@ -51,26 +77,38 @@ function verdictMeta(verdict: VegWiseProductResult["analysis"]["verdict"]) {
   } as const;
 }
 
-const ALLERGEN_ICON: Record<string, string> = {
-  milk: "🥛",
-  lactose: "🥛",
-  gluten: "🌾",
-  wheat: "🌾",
-  egg: "🥚",
-  eggs: "🥚",
-  peanut: "🥜",
-  peanuts: "🥜",
-  "tree nuts": "🌰",
-  almond: "🌰",
-  hazelnut: "🌰",
-  walnut: "🌰",
-  soy: "🌱",
-  soya: "🌱",
-  fish: "🐟",
-  shellfish: "🦐",
-  crustacean: "🦐",
-  sesame: "⚪️",
-};
+function renderAllergenIcon(key: string) {
+  switch (key) {
+    case "milk":
+    case "lactose":
+      return <Milk size={14} />;
+    case "gluten":
+    case "wheat":
+      return <Wheat size={14} />;
+    case "egg":
+    case "eggs":
+      return <Egg size={14} />;
+    case "fish":
+      return <Fish size={14} />;
+    case "shellfish":
+    case "crustacean":
+      return <Shrimp size={14} />;
+    case "soy":
+    case "soya":
+      return <Sprout size={14} />;
+    // For peanuts/tree nuts/sesame, fall back to a generic alert icon
+    case "peanut":
+    case "peanuts":
+    case "tree nuts":
+    case "almond":
+    case "hazelnut":
+    case "walnut":
+    case "sesame":
+      return <AlertCircle size={14} />;
+    default:
+      return <AlertCircle size={14} />;
+  }
+}
 
 const containerVariants = {
   hidden: { opacity: 0, y: 64 },
@@ -131,6 +169,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
 
   const reasons = (result as any).reasons ?? result.analysis.reasons ?? [];
   const [expanded, setExpanded] = useState(false);
+  const [showNutrition, setShowNutrition] = useState(false);
 
   const uniqueTerms = useMemo(() => {
     const byCat: Record<string, VegWiseReason["category"]> = {};
@@ -274,13 +313,13 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
     return () => document.removeEventListener("keydown", onKey);
   }, [onScanAnother]);
 
-  const fallbackCategoryEmoji = useMemo(() => {
+  const fallbackCategoryIcon = useMemo(() => {
     try {
       const normalized = result.ingredientsNormalized || [];
       const hasGrain = normalized.some((i) => /wheat|rice|oat|barley|corn|maize/i.test(i));
-      if (hasGrain) return "🌾";
+      if (hasGrain) return <Wheat size={56} className="text-gray-400" />;
     } catch {}
-    return "🥫";
+    return <Package size={56} className="text-gray-400" />;
   }, [result.ingredientsNormalized]);
 
   return (
@@ -351,7 +390,13 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
                 }`}
                 aria-label={`Verdict: ${meta.text}`}
               >
-                <span className="text-4xl leading-none" aria-hidden>{verdict === "yes" ? "✓" : verdict === "no" ? "✗" : "!"}</span>
+                {verdict === "yes" ? (
+                  <Check size={28} aria-hidden />
+                ) : verdict === "no" ? (
+                  <X size={28} aria-hidden />
+                ) : (
+                  <AlertTriangle size={28} aria-hidden />
+                )}
               </div>
             </motion.div>
           </div>
@@ -369,7 +414,15 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
             }`}
           >
             <div className="flex items-center gap-4">
-              <div className="text-[5rem] leading-none" aria-hidden>{verdict === "yes" ? "✅" : verdict === "no" ? "❌" : "⚠️"}</div>
+              <div className="text-[5rem] leading-none" aria-hidden>
+                {verdict === "yes" ? (
+                  <Check size={80} />
+                ) : verdict === "no" ? (
+                  <X size={80} />
+                ) : (
+                  <AlertTriangle size={80} />
+                )}
+              </div>
               <div>
                 <div className="text-3xl font-bold">{meta.text}</div>
                 <div className="text-sm/6 text-white/90">{dietMode ? `Verified for ${capitalize(dietMode)}` : "Diet analysis"}</div>
@@ -410,7 +463,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
                     className={`flex items-start gap-3 rounded-lg p-3 ring-1 ${chipRing(r.category)} ${chipBg(r.category)} ${chipText(r.category)} border-l-4 ${chipBorder(r.category)}`}
                     aria-label={`Contains ${r.ingredient}. ${r.explanation}`}
                   >
-                    <span className="text-xl" aria-hidden>{chipEmoji(r.category)}</span>
+                    <span className="text-xl" aria-hidden>{chipIcon(r.category)}</span>
                     <div className="flex-1">
                       <div className="font-medium">Contains: {r.ingredient}</div>
                       <div className="text-sm opacity-70">{r.explanation || `Flagged as ${r.category}`}</div>
@@ -460,21 +513,31 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
           className="px-4 pt-4"
           transition={{ type: "spring", stiffness: 240, damping: 22, delay: 0.3 }}
         >
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="mb-2 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setShowNutrition((v) => !v)}
+              className="rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-700 ring-1 ring-stone-200 shadow-sm"
+              aria-expanded={showNutrition}
+              aria-controls="nutrition-card"
+            >
+              {showNutrition ? "Hide nutrition" : "Show nutrition"}
+            </button>
+          </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {/* Allergens */}
             <div className="rounded-2xl p-4 shadow-sm border border-stone-100 bg-amber-50 hover:shadow-md transition-transform hover:-translate-y-0.5">
-              <div className="mb-2 text-sm font-semibold">⚠️ Allergens</div>
+              <div className="mb-2 text-sm font-semibold flex items-center gap-1"><TriangleAlert size={14} /> Allergens</div>
               {result.allergens && result.allergens.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {result.allergens.map((a) => {
                     const key = String(a).toLowerCase().replace(/^en:/, "");
-                    const emoji = ALLERGEN_ICON[key] || "⚠️";
                     return (
                       <span
                         key={`${key}`}
                         className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs text-gray-800 ring-1 ring-gray-200"
                       >
-                        <span aria-hidden>{emoji}</span>
+                        <span aria-hidden className="grid place-items-center">{renderAllergenIcon(key)}</span>
                         <span className="capitalize">{key}</span>
                       </span>
                     );
@@ -485,23 +548,25 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
               )}
             </div>
 
-            {/* Nutrition */}
-            <div className="rounded-2xl p-4 shadow-sm border border-stone-100 bg-emerald-50 hover:shadow-md transition-transform hover:-translate-y-0.5">
-              <div className="mb-2 text-sm font-semibold">📊 Nutrition</div>
-              {result.nutrition ? (
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <CircleStat label="Kcal" value={result.nutrition.calories ?? 0} unit="" pct={clamp((result.nutrition.calories ?? 0) / 300, 0, 1)} />
-                  <CircleStat label="Sugars" value={result.nutrition.sugars ?? 0} unit="g" pct={clamp((result.nutrition.sugars ?? 0) / 50, 0, 1)} />
-                  <CircleStat label="Protein" value={result.nutrition.protein ?? 0} unit="g" pct={clamp((result.nutrition.protein ?? 0) / 25, 0, 1)} />
-                </div>
-              ) : (
-                <div className="text-sm text-gray-500">Data not available</div>
-              )}
-            </div>
+            {/* Nutrition (collapsible via toggle) */}
+            {showNutrition && (
+              <div id="nutrition-card" className="rounded-2xl p-4 shadow-sm border border-stone-100 bg-emerald-50 hover:shadow-md transition-transform hover:-translate-y-0.5">
+                <div className="mb-2 text-sm font-semibold flex items-center gap-1"><BarChart3 size={14} /> Nutrition</div>
+                {result.nutrition ? (
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <CircleStat label="Kcal" value={result.nutrition.calories ?? 0} unit="" pct={clamp((result.nutrition.calories ?? 0) / 300, 0, 1)} />
+                    <CircleStat label="Sugars" value={result.nutrition.sugars ?? 0} unit="g" pct={clamp((result.nutrition.sugars ?? 0) / 50, 0, 1)} />
+                    <CircleStat label="Protein" value={result.nutrition.protein ?? 0} unit="g" pct={clamp((result.nutrition.protein ?? 0) / 25, 0, 1)} />
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500">Data not available</div>
+                )}
+              </div>
+            )}
 
             {/* Source */}
             <div className="rounded-2xl p-4 shadow-sm border border-stone-100 bg-stone-50 hover:shadow-md transition-transform hover:-translate-y-0.5">
-              <div className="mb-2 text-sm font-semibold">🔗 Source</div>
+              <div className="mb-2 text-sm font-semibold">Source</div>
               <a
                 href={`https://world.openfoodfacts.org/product/${encodeURIComponent(barcode)}`}
                 target="_blank"
@@ -511,7 +576,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
                 Open Food Facts
               </a>
               <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-xs text-emerald-700 ring-1 ring-emerald-200">
-                <span aria-hidden>✓</span> Verified
+                <Check size={12} aria-hidden /> Verified
               </div>
             </div>
 
@@ -525,7 +590,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
                   aria-label="Share product"
                   className="grid h-10 w-10 place-items-center rounded-xl ring-1 ring-stone-200 hover:bg-stone-100 transition"
                 >
-                  <span aria-hidden>📤</span>
+                  <Share2 size={18} aria-hidden />
                 </button>
                 <FavoriteButton barcode={barcode} />
                 <button
@@ -537,7 +602,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
                   }}
                   className="grid h-10 w-10 place-items-center rounded-xl ring-1 ring-stone-200 hover:bg-stone-100 transition"
                 >
-                  <span aria-hidden>🚩</span>
+                  <Flag size={18} aria-hidden />
                 </button>
               </div>
             </div>
@@ -557,7 +622,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
                 className="flex-1 basis-[70%] h-14 rounded-xl bg-emerald-600 text-white font-semibold shadow-md grid place-items-center"
                 aria-label="Scan another product"
               >
-                <span className="mr-2" aria-hidden>📷</span> Scan Another
+                <span className="mr-2" aria-hidden><Camera size={18} /></span> Scan Another
               </motion.button>
               <button
                 type="button"
@@ -567,7 +632,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
                   try { window.dispatchEvent(new CustomEvent("openHistory")); } catch {}
                 }}
               >
-                <span className="mr-2" aria-hidden>🕘</span> History
+                <span className="mr-2" aria-hidden><Clock size={18} /></span> History
               </button>
             </div>
           </div>
@@ -691,22 +756,22 @@ function DietStatusList({ result }: { result: VegWiseProductResult }) {
 }
 
 // Chip styles by category
-function chipEmoji(category: VegWiseReason["category"]) {
+function chipIcon(category: VegWiseReason["category"]) {
   switch (category) {
     case "meat":
-      return "🥩";
+      return <Drumstick size={18} />;
     case "dairy":
-      return "🥛";
+      return <Milk size={18} />;
     case "egg":
-      return "🥚";
+      return <Egg size={18} />;
     case "honey":
-      return "🍯";
+      return <AlertTriangle size={18} />;
     case "root":
-      return "🥕";
+      return <Carrot size={18} />;
     case "fungi":
-      return "🍄";
+      return <Mushroom size={18} />;
     default:
-      return "⚠️";
+      return <AlertCircle size={18} />;
   }
 }
 
@@ -809,7 +874,7 @@ function FavoriteButton({ barcode }: { barcode: string }) {
       onClick={toggle}
       className={`grid h-10 w-10 place-items-center rounded-xl ring-1 ring-stone-200 hover:bg-stone-100 transition ${fav ? "text-rose-600" : "text-inherit"}`}
     >
-      <span aria-hidden>{fav ? "❤️" : "🤍"}</span>
+      <HeartIcon size={18} aria-hidden fill={fav ? "currentColor" : "none"} />
     </button>
   );
 }
