@@ -87,6 +87,52 @@ function toEnglishTagValue(tags?: string[]): string | undefined {
   return en ? en.slice(3) : tags[tags.length - 1]?.split(":").pop();
 }
 
+// Normalize OFF categories into lowercase english slugs
+function normalizeCategorySlugs(tags?: string[]): string[] {
+  if (!Array.isArray(tags)) return [];
+  return tags
+    .map(String)
+    .map((t) => (t.includes(":") ? t.split(":").pop()! : t))
+    .map((s) => s.toLowerCase().trim())
+    .filter(Boolean);
+}
+
+// Avoid generic/broad categories that don't help with like-for-like suggestions
+const GENERIC_CATEGORY_SLUGS = new Set([
+  "foods",
+  "food",
+  "meals",
+  "prepared-meals",
+  "ready-meals",
+  "snacks",
+  "beverages",
+  "drinks",
+  "groceries",
+  "grocery-products",
+  "dishes",
+]);
+
+// Choose a specific category slug; prefer ramen/noodles if present, else longest non-generic slug
+function pickCategorySlug(tags?: string[]): string | undefined {
+  const slugs = normalizeCategorySlugs(tags).filter((s) => !GENERIC_CATEGORY_SLUGS.has(s));
+  if (slugs.length === 0) return undefined;
+
+  const preferred = ["instant-ramen", "instant-noodles", "ramen", "noodles"];
+  for (const key of preferred) {
+    const hits = slugs.filter((s) => s.includes(key));
+    if (hits.length) return hits.sort((a, b) => b.length - a.length)[0];
+  }
+
+  // Fallback: assume longest slug is most specific
+  return slugs.sort((a, b) => b.length - a.length)[0];
+}
+
+// Ensure a candidate truly belongs to the selected category (not just loosely matched by search)
+function belongsToCategory(c: Candidate, slug: string): boolean {
+  const cats = normalizeCategorySlugs(c.categories_tags);
+  return cats.some((cat) => cat === slug || cat.endsWith(`-${slug}`) || slug.endsWith(`-${cat}`));
+}
+
 export function offSearchUrl(input: { category: string; country?: string; page?: number }): string {
   const { category, country, page = 1 } = input;
   const fields = [
@@ -302,7 +348,7 @@ export async function fetchSuggestions(baselineInput: Baseline, prefs: Suggestio
     const fetched = await fetchBaselineFromOff(baseline.code);
     if (fetched) baseline = { ...fetched, ...baseline };
   }
-  const categorySlug = toEnglishTagValue(baseline.categories_tags);
+  const categorySlug = pickCategorySlug(baseline.categories_tags);
   if (!categorySlug) return [];
   const countrySlug = prefs.countryTag ? prefs.countryTag.replace(/^en:/, "") : toEnglishTagValue(baseline.countries_tags);
 
@@ -314,7 +360,9 @@ export async function fetchSuggestions(baselineInput: Baseline, prefs: Suggestio
     return [];
   }
   const hits: any[] = Array.isArray(data?.products) ? data.products : [];
-  const candidates = hits.map(mapOffToCandidate).filter((c) => c.code && c.code !== baseline.code);
+  const candidates = hits
+    .map(mapOffToCandidate)
+    .filter((c) => c.code && c.code !== baseline.code && belongsToCategory(c, categorySlug));
 
   // Filter
   const filtered: { c: Candidate; dietVerdict: "yes"|"no"|"unsure" }[] = [];
