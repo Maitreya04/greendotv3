@@ -357,7 +357,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
             )
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-              <span className="text-5xl" aria-hidden>{fallbackCategoryEmoji}</span>
+              {fallbackCategoryIcon}
               <span className="sr-only">No product image available</span>
             </div>
           )}
