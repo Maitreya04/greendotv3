@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import ResultLight from "@/components/ResultLight";
+import ResultCard from "@/components/ResultCard";
 import dynamic from "next/dynamic";
 import { fetchProduct, type ProductResult as OffProductResult } from "@/lib/offApi";
 import { analyzeIngredients, normalizeIngredients, type AnalysisResult } from "@/lib/analyze";
@@ -233,7 +233,7 @@ export default function Home() {
 
       {/* Result overlay */}
       {!showOnboarding && view === "result" && uiResult && (
-        <ResultLight result={uiResult} onBack={resetAll} />
+        <ResultCard result={uiResult} onScanAnother={resetAll} dietMode={dietMode} />
       )}
 
       {/* Uploader overlay */}
