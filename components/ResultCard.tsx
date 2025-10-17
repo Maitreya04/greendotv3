@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { ProductResult as VegWiseProductResult, Reason as VegWiseReason, DietMode } from "@/types";
 import Image from "next/image";
 import { analyzeIngredients } from "@/lib/analyze";
+import AlternativesPanel from "@/components/AlternativesPanel";
 import SectionCard from "@/components/ui/SectionCard";
 import StatusRow from "@/components/ui/StatusRow";
 import { DietTag, TagState } from "@/components/ui/DietTag";
@@ -170,6 +171,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
   const reasons = (result as any).reasons ?? result.analysis.reasons ?? [];
   const [expanded, setExpanded] = useState(false);
   const [showNutrition, setShowNutrition] = useState(false);
+  const [showAlternatives, setShowAlternatives] = useState(false);
 
   const uniqueTerms = useMemo(() => {
     const byCat: Record<string, VegWiseReason["category"]> = {};
@@ -604,6 +606,14 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
                 >
                   <Flag size={18} aria-hidden />
                 </button>
+              <button
+                type="button"
+                aria-label="Find diet-friendly alternatives"
+                onClick={() => setShowAlternatives(true)}
+                className="h-10 px-3 rounded-xl bg-emerald-600 text-white text-sm hover:bg-emerald-700 transition"
+              >
+                Find alternatives
+              </button>
               </div>
             </div>
           </div>
@@ -645,6 +655,13 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
           </div>
         </motion.div>
       </motion.div>
+      {showAlternatives && (
+        <AlternativesPanel
+          barcode={barcode}
+          initialDiet={(dietMode as DietMode) || "vegetarian"}
+          onClose={() => setShowAlternatives(false)}
+        />
+      )}
     </div>
   );
 }

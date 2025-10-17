@@ -35,7 +35,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} ${jetbrainsMono.variable}`}>
         {/* Global Top Header */}
-        <div className="fixed top-0 left-0 right-0 z-30 pt-[max(0px,env(safe-area-inset-top))]">
+        <div className="fixed top-0 left-0 right-0 z-[60] pt-[max(0px,env(safe-area-inset-top))]">
           <div className="mx-4 md:mx-auto md:max-w-[900px] mt-3 h-16 rounded-2xl bg-white/80 text-stone-900 shadow-sm backdrop-blur-xl ring-1 ring-black/5 flex items-center justify-between px-4">
             <Link href="/" aria-label="Home" className="flex items-center select-none">
               <Image src="/greendot.png" alt="Greendot" width={120} height={28} priority style={{ height: "28px", width: "auto" }} />
