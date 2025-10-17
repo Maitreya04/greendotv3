@@ -24,15 +24,9 @@ function getQueryPref(searchParams: Record<string, string | string[] | undefined
   };
 }
 
-export default async function AlternativesPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ barcode: string }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const { barcode } = await params;
-  const sp = await searchParams;
+export default async function AlternativesPage(props: any) {
+  const { barcode } = await props.params;
+  const sp = await props.searchParams;
   const prefs = getQueryPref(sp);
   const items = await fetchSuggestions({ code: barcode }, prefs);
 
