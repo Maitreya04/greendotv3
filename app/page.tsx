@@ -154,7 +154,14 @@ export default function Home() {
         reasons: anal.reasons,
       },
       allergens: product.allergens ?? [],
-      nutrition: product.energyKcalPer100g != null ? { calories: product.energyKcalPer100g } : undefined,
+      nutrition:
+        product.energyKcalPer100g != null || product.sugarsPer100g != null || product.proteinsPer100g != null
+          ? {
+              calories: product.energyKcalPer100g ?? undefined,
+              sugars: product.sugarsPer100g ?? undefined,
+              protein: product.proteinsPer100g ?? undefined,
+            }
+          : undefined,
       metadata: {
         scannedAt: new Date().toISOString(),
         source: "OpenFoodFacts",

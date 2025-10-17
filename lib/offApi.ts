@@ -5,6 +5,8 @@ export type ProductResult = {
   ingredientsText: string | null;
   allergens: string[];
   energyKcalPer100g: number | null;
+  sugarsPer100g: number | null;
+  proteinsPer100g: number | null;
   servingSize: string | null;
   imageUrl: string | null;
 };
@@ -57,6 +59,26 @@ function toProductResult(barcode: string, product: OffProduct): ProductResult {
     energyKcalPer100g = Number.isFinite(parsed) ? parsed : null;
   }
 
+  // Parse sugars (g/100g)
+  let sugarsPer100g: number | null = null;
+  const sugarsRaw = product.nutriments?.["sugars_100g"] as number | string | undefined;
+  if (typeof sugarsRaw === "number") {
+    sugarsPer100g = Number.isFinite(sugarsRaw) ? sugarsRaw : null;
+  } else if (typeof sugarsRaw === "string") {
+    const parsed = Number(sugarsRaw);
+    sugarsPer100g = Number.isFinite(parsed) ? parsed : null;
+  }
+
+  // Parse proteins (g/100g)
+  let proteinsPer100g: number | null = null;
+  const proteinsRaw = product.nutriments?.["proteins_100g"] as number | string | undefined;
+  if (typeof proteinsRaw === "number") {
+    proteinsPer100g = Number.isFinite(proteinsRaw) ? proteinsRaw : null;
+  } else if (typeof proteinsRaw === "string") {
+    const parsed = Number(proteinsRaw);
+    proteinsPer100g = Number.isFinite(parsed) ? parsed : null;
+  }
+
   const ingredientsText =
     product.ingredients_text_en?.trim() || product.ingredients_text?.trim() || null;
 
@@ -67,6 +89,8 @@ function toProductResult(barcode: string, product: OffProduct): ProductResult {
     ingredientsText,
     allergens,
     energyKcalPer100g,
+    sugarsPer100g,
+    proteinsPer100g,
     servingSize: product.serving_size?.trim() || null,
     imageUrl: product.image_url?.trim() || null,
   };
