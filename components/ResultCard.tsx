@@ -3,18 +3,20 @@
 import React from "react";
 import { useMemo, useState, useCallback, useEffect, useRef, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { ProductResult as VegWiseProductResult, Reason as VegWiseReason } from "@/types";
+import type { ProductResult as VegWiseProductResult, Reason as VegWiseReason, DietMode } from "@/types";
 import Image from "next/image";
 import { analyzeIngredients } from "@/lib/analyze";
 import SectionCard from "@/components/ui/SectionCard";
 import StatusRow from "@/components/ui/StatusRow";
 import { DietTag, TagState } from "@/components/ui/DietTag";
 import { Leaf, Sprout, Wheat, Milk, Hand, ShieldAlert, HeartPulse } from "lucide-react";
+import DietToggle from "@/components/ui/DietToggle";
 
 type Props = {
   result: VegWiseProductResult;
   onScanAnother: () => void;
-  dietMode?: "vegetarian" | "vegan" | "jain";
+  dietMode?: DietMode;
+  onChangeDietMode?: (next: DietMode) => void;
 };
 
 function verdictMeta(verdict: VegWiseProductResult["analysis"]["verdict"]) {
@@ -386,6 +388,11 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-white/80">{confidence}% confidence</div>
               </div>
             </div>
+            {onChangeDietMode && (
+              <div className="mt-4 flex justify-end">
+                <DietToggle value={(dietMode ?? "vegetarian") as DietMode} onChange={onChangeDietMode} size="sm" />
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -394,16 +401,12 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
 
         {/* 3) DETAILED ANALYSIS */}
         <motion.div variants={itemVariants} className="px-4 pt-4">
-          {verdict !== "yes" && Array.isArray(reasons) && reasons.length > 0 && (
-            <div className="mb-3">
-              <div className="text-lg font-semibold mb-3">Issues detected</div>
+          {Array.isArray(reasons) && reasons.length > 0 && (
+            <SectionCard title="Flagged ingredients" subtitle="Detected terms affecting the verdict" className="mb-3">
               <motion.ul
                 initial="hidden"
                 animate="visible"
-                variants={{
-                  hidden: {},
-                  visible: { transition: { staggerChildren: 0.05 } },
-                }}
+                variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.05 } } }}
                 className="grid gap-2"
               >
                 {(reasons as VegWiseReason[]).map((r, idx) => (
@@ -421,7 +424,7 @@ export default function ResultCard({ result, onScanAnother, dietMode }: Props) {
                   </motion.li>
                 ))}
               </motion.ul>
-            </div>
+            </SectionCard>
           )}
 
           {/* Original Ingredients (collapsible) */}

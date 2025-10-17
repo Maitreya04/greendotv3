@@ -9,6 +9,7 @@ import type { DietMode, ProductResult as TypesProductResult } from "@/types";
 import Onboarding from "@/components/Onboarding";
 import Link from "next/link";
 import { Settings as SettingsIcon } from "lucide-react";
+import DietToggle from "@/components/ui/DietToggle";
 
 type ViewState = "scanner" | "result" | "error";
 
@@ -207,9 +208,7 @@ export default function Home() {
           <div className="mx-4 md:mx-auto md:max-w-[900px] mt-3 h-16 rounded-2xl bg-white/80 text-black shadow-sm backdrop-blur-xl ring-1 ring-black/5 flex items-center justify-between px-4">
             <div className="text-xl font-bold select-none">🌱 VegWise</div>
             <div className="flex items-center justify-center">
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-emerald-700 text-xs font-medium ring-1 ring-emerald-200">
-                {capitalize(dietMode)}
-              </span>
+              <DietToggle value={dietMode} onChange={setDietMode} size="sm" />
             </div>
             <Link href="/settings" aria-label="Settings" className="grid h-9 w-9 place-items-center rounded-xl text-emerald-700 hover:bg-emerald-50 ring-1 ring-emerald-200">
               <SettingsIcon size={18} />
@@ -240,7 +239,7 @@ export default function Home() {
 
       {/* Result overlay */}
       {!showOnboarding && view === "result" && uiResult && (
-        <ResultCard result={uiResult} onScanAnother={resetAll} dietMode={dietMode} onChangeDietMode={setDietMode} />
+        <ResultCard result={uiResult} onScanAnother={resetAll} dietMode={dietMode} />
       )}
 
       {/* Uploader overlay */}
